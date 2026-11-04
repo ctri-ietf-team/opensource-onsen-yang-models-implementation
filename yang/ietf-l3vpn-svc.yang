@@ -1,0 +1,664 @@
+module ietf-l3vpn-svc {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-l3vpn-svc";
+  prefix l3vpn-svc;
+
+  import ietf-inet-types {
+    prefix inet;
+    reference
+      "RFC 6991: Common YANG Data Types";
+  }
+
+  organization
+    "IETF L3SM (Layer 3 VPN Service Model) Working Group";
+  contact
+    "WG Web:   <https://datatracker.ietf.org/wg/l3sm/>";
+  description
+    "This YANG module defines a generic service model for Layer 3
+     VPNs. CORE SUBSET for L3VPN mapping prototype.";
+
+  revision 2018-01-19 {
+    description
+      "Initial revision.";
+    reference
+      "RFC 8299: YANG Data Model for L3VPN Service Delivery";
+  }
+
+  /* Identities */
+
+  identity vpn-signaling-type {
+    description
+      "Base identity for the VPN signaling type.";
+  }
+
+  identity l3vpn {
+    base vpn-signaling-type;
+    description
+      "L3VPN service.";
+  }
+
+  identity vpn-topology {
+    description
+      "Base identity for the VPN service topology.";
+  }
+
+  identity any-to-any {
+    base vpn-topology;
+    description
+      "Any-to-any topology.";
+  }
+
+  identity hub-spoke {
+    base vpn-topology;
+    description
+      "Hub-and-spoke topology.";
+  }
+
+  identity hub-spoke-disjoint {
+    base vpn-topology;
+    description
+      "Hub-and-spoke topology with disjoint spoke-to-spoke.";
+  }
+
+  identity site-role {
+    description
+      "Base identity for the site role.";
+  }
+
+  identity spoke-role {
+    base site-role;
+    description
+      "Spoke role.";
+  }
+
+  identity hub-role {
+    base site-role;
+    description
+      "Hub role.";
+  }
+
+  identity management {
+    description
+      "Base identity for site management.";
+  }
+
+  identity co-managed {
+    base management;
+    description
+      "Co-managed.";
+  }
+
+  identity customer-managed {
+    base management;
+    description
+      "Customer-managed.";
+  }
+
+  identity provider-managed {
+    base management;
+    description
+      "Provider-managed.";
+  }
+
+  identity address-family {
+    description
+      "Base identity for an address family.";
+  }
+
+  identity ipv4 {
+    base address-family;
+    description
+      "IPv4 address family.";
+  }
+
+  identity ipv6 {
+    base address-family;
+    description
+      "IPv6 address family.";
+  }
+
+  identity routing-protocol-type {
+    description
+      "Base identity for routing protocol types.";
+  }
+
+  identity bgp {
+    base routing-protocol-type;
+    description
+      "BGP protocol.";
+  }
+
+  identity ospf {
+    base routing-protocol-type;
+    description
+      "OSPF protocol.";
+  }
+
+  identity static {
+    base routing-protocol-type;
+    description
+      "Static routing.";
+  }
+
+  identity direct {
+    base routing-protocol-type;
+    description
+      "Direct connection.";
+  }
+
+  identity route-target-type {
+    description
+      "Base identity for route-target types.";
+  }
+
+  identity import {
+    base route-target-type;
+    description
+      "Import route-target.";
+  }
+
+  identity export {
+    base route-target-type;
+    description
+      "Export route-target.";
+  }
+
+  identity both {
+    base route-target-type;
+    description
+      "Both import and export route-target.";
+  }
+
+  identity site-network-access-type {
+    description
+      "Base identity for the site network access type.";
+  }
+
+  identity point-to-point {
+    base site-network-access-type;
+    description
+      "Point-to-point access.";
+  }
+
+  identity multipoint {
+    base site-network-access-type;
+    description
+      "Multipoint access.";
+  }
+
+  /* Groupings */
+
+  grouping ipv4-addresses {
+    description
+      "IPv4 addresses of an IP connection.";
+    container ipv4 {
+      description
+        "IPv4 addresses.";
+      container addresses {
+        description
+          "List of IPv4 addresses.";
+        list address {
+          key "address-id";
+          description
+            "An IPv4 address.";
+          leaf address-id {
+            type string;
+            description
+              "Identifier of the address.";
+          }
+          leaf address {
+            type inet:ipv4-address;
+            mandatory true;
+            description
+              "IPv4 address.";
+          }
+          leaf prefix-length {
+            type uint8 {
+              range "0..32";
+            }
+            mandatory true;
+            description
+              "Prefix length.";
+          }
+        }
+      }
+    }
+  }
+
+  grouping ipv6-addresses {
+    description
+      "IPv6 addresses of an IP connection.";
+    container ipv6 {
+      description
+        "IPv6 addresses.";
+      container addresses {
+        description
+          "List of IPv6 addresses.";
+        list address {
+          key "address-id";
+          description
+            "An IPv6 address.";
+          leaf address-id {
+            type string;
+            description
+              "Identifier of the address.";
+          }
+          leaf address {
+            type inet:ipv6-address;
+            mandatory true;
+            description
+              "IPv6 address.";
+          }
+          leaf prefix-length {
+            type uint8 {
+              range "0..128";
+            }
+            mandatory true;
+            description
+              "Prefix length.";
+          }
+        }
+      }
+    }
+  }
+
+  grouping ip-connection {
+    description
+      "IP connection parameters of a site network access.";
+    container ip-connection {
+      description
+        "IP connection parameters.";
+      uses l3vpn-svc:ipv4-addresses;
+      uses l3vpn-svc:ipv6-addresses;
+    }
+  }
+
+  /* Top-level container */
+
+  container l3vpn-svc {
+    description
+      "The L3VPN service container.";
+
+    container vpn-profiles {
+      description
+        "VPN profiles.";
+      container valid-provider-identifiers {
+        description
+          "Provider identifiers that can be referenced.";
+        list cloud-identifier {
+          key "id";
+          description
+            "Cloud provider identifier.";
+          leaf id {
+            type string;
+            description
+              "Identifier.";
+          }
+        }
+        list qos-profile-identifier {
+          key "id";
+          description
+            "QoS profile identifier.";
+          leaf id {
+            type string;
+            description
+              "Identifier.";
+          }
+        }
+      }
+    }
+
+    container vpn-services {
+      description
+        "VPN services.";
+      list vpn-service {
+        key "vpn-id";
+        description
+          "A VPN service.";
+        leaf vpn-id {
+          type string;
+          mandatory true;
+          description
+            "VPN service identifier.";
+        }
+        leaf vpn-name {
+          type string;
+          description
+            "A name of the VPN service.";
+        }
+        leaf vpn-description {
+          type string;
+          description
+            "Description of the VPN service.";
+        }
+        leaf customer-name {
+          type string;
+          description
+            "Name of the customer.";
+        }
+        leaf vpn-type {
+          type identityref {
+            base vpn-signaling-type;
+          }
+          default l3vpn;
+          description
+            "Type of VPN service.";
+        }
+        leaf vpn-service-topology {
+          type identityref {
+            base vpn-topology;
+          }
+          mandatory true;
+          description
+            "VPN service topology.";
+        }
+
+        container cloud-accesses {
+          description
+            "Cloud accesses of the VPN service.";
+          list cloud-access {
+            key "cloud-access-id";
+            description
+              "A cloud access.";
+            leaf cloud-access-id {
+              type string;
+              mandatory true;
+              description
+                "Identifier of the cloud access.";
+            }
+            leaf cloud-provider {
+              type string;
+              description
+                "Cloud provider name.";
+            }
+            leaf cloud-identifier {
+              type string;
+              description
+                "Cloud identifier.";
+            }
+          }
+        }
+
+        container sites {
+          description
+            "Sites of the VPN service.";
+          list site {
+            key "site-id";
+            description
+              "A site of the VPN service.";
+            leaf site-id {
+              type string;
+              mandatory true;
+              description
+                "Site identifier.";
+            }
+            leaf site-name {
+              type string;
+              description
+                "Name of the site.";
+            }
+            leaf site-role {
+              type identityref {
+                base site-role;
+              }
+              description
+                "Role of the site (spoke/hub).";
+            }
+
+            container locations {
+              description
+                "Locations of the site.";
+              list location {
+                key "location-id";
+                description
+                  "A location of the site.";
+                leaf location-id {
+                  type string;
+                  mandatory true;
+                  description
+                    "Location identifier.";
+                }
+                leaf address {
+                  type string;
+                  description
+                    "Address of the location.";
+                }
+                leaf latitude {
+                  type string;
+                  description
+                    "Latitude of the location.";
+                }
+                leaf longitude {
+                  type string;
+                  description
+                    "Longitude of the location.";
+                }
+              }
+            }
+
+            container devices {
+              description
+                "CE devices of the site.";
+              list device {
+                key "device-id";
+                description
+                  "A CE device.";
+                leaf device-id {
+                  type string;
+                  mandatory true;
+                  description
+                    "Device identifier.";
+                }
+                leaf location {
+                  type leafref {
+                    path "../../../locations/location/location-id";
+                  }
+                  description
+                    "Location of the device.";
+                }
+              }
+            }
+
+            leaf management {
+              type identityref {
+                base management;
+              }
+              description
+                "Management type of the site.";
+            }
+
+            container site-diversity {
+              description
+                "Diversity requirements of the site.";
+              container diversity-groups {
+                description
+                  "Diversity groups.";
+                list group {
+                  key "group-id";
+                  description
+                    "A diversity group.";
+                  leaf group-id {
+                    type string;
+                    mandatory true;
+                    description
+                      "Group identifier.";
+                  }
+                }
+              }
+            }
+
+            container site-network-accesses {
+              description
+                "Site network accesses of the site.";
+              list site-network-access {
+                key "site-network-access-id";
+                description
+                  "A site network access.";
+                leaf site-network-access-id {
+                  type string;
+                  mandatory true;
+                  description
+                    "Identifier of the site network access.";
+                }
+                leaf site-network-access-type {
+                  type identityref {
+                    base site-network-access-type;
+                  }
+                  description
+                    "Type of the site network access.";
+                }
+
+                uses l3vpn-svc:ip-connection;
+
+                container routing-protocols {
+                  description
+                    "Routing protocols of the access.";
+                  list routing-protocol {
+                    key "type";
+                    description
+                      "A routing protocol.";
+                    leaf type {
+                      type identityref {
+                        base routing-protocol-type;
+                      }
+                      mandatory true;
+                      description
+                        "Type of the routing protocol.";
+                    }
+                    container bgp {
+                      description
+                        "BGP parameters.";
+                      leaf autonomous-system {
+                        type inet:as-number;
+                        description
+                          "Customer AS number.";
+                      }
+                      leaf address-family {
+                        type identityref {
+                          base address-family;
+                        }
+                        description
+                          "Address family.";
+                      }
+                    }
+                    container ospf {
+                      description
+                        "OSPF parameters.";
+                      leaf address-family {
+                        type identityref {
+                          base address-family;
+                        }
+                        description
+                          "Address family.";
+                      }
+                      leaf area {
+                        type string;
+                        description
+                          "OSPF area.";
+                      }
+                    }
+                    container static {
+                      description
+                        "Static routing parameters.";
+                      leaf prefix {
+                        type inet:ip-prefix;
+                        description
+                          "Static route prefix.";
+                      }
+                    }
+                    container direct {
+                      description
+                        "Direct connection parameters.";
+                    }
+                  }
+                }
+
+                container service {
+                  description
+                    "Service parameters of the access.";
+                  leaf svc-input-bandwidth {
+                    type uint64;
+                    units "bps";
+                    description
+                      "Input bandwidth of the service (upload).";
+                  }
+                  leaf svc-output-bandwidth {
+                    type uint64;
+                    units "bps";
+                    description
+                      "Output bandwidth of the service (download).";
+                  }
+                  leaf mtu {
+                    type uint16;
+                    units "bytes";
+                    description
+                      "MTU of the service.";
+                  }
+                  container qos {
+                    description
+                      "QoS parameters.";
+                    container qos-profile {
+                      description
+                        "QoS profile reference.";
+                      leaf qos-profile-id {
+                        type leafref {
+                          path "/l3vpn-svc:l3vpn-svc/l3vpn-svc:vpn-profiles"
+                             + "/l3vpn-svc:valid-provider-identifiers"
+                             + "/l3vpn-svc:qos-profile-identifier/l3vpn-svc:id";
+                        }
+                        description
+                          "Reference to a QoS profile.";
+                      }
+                      container custom {
+                        description
+                          "Custom QoS classes.";
+                        list class {
+                          key "class-id";
+                          description
+                            "A custom QoS class.";
+                          leaf class-id {
+                            type string;
+                            mandatory true;
+                            description
+                              "Class identifier.";
+                          }
+                          leaf rate {
+                            type uint64;
+                            description
+                              "Rate of the class.";
+                          }
+                          leaf-list isolation {
+                            type string;
+                            description
+                              "Isolation requirements of the class.";
+                          }
+                        }
+                      }
+                    }
+                  }
+                  container security {
+                    description
+                      "Security parameters.";
+                    container encryption {
+                      description
+                        "Encryption parameters.";
+                      leaf encryption-profile-id {
+                        type leafref {
+                          path "/l3vpn-svc:l3vpn-svc/l3vpn-svc:vpn-profiles"
+                             + "/l3vpn-svc:valid-provider-identifiers"
+                             + "/l3vpn-svc:qos-profile-identifier/l3vpn-svc:id";
+                        }
+                        description
+                          "Reference to an encryption profile.";
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

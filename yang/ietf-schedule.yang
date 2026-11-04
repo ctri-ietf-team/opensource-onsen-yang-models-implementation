@@ -1,0 +1,54 @@
+module ietf-schedule {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-schedule";
+  prefix schedule;
+
+  import ietf-yang-types {
+    prefix yang;
+    reference
+      "RFC 6991: Common YANG Data Types";
+  }
+
+  organization
+    "IETF NETMOD (NETCONF Data Modeling Language) Working Group";
+  contact
+    "WG Web:   <https://datatracker.ietf.org/wg/netmod/>";
+  description
+    "This module contains a collection of YANG definitions for
+     scheduling. MINIMAL VERSION for L3VPN mapping prototype.";
+
+  revision 2024-11-03 {
+    description
+      "Initial revision.";
+    reference
+      "RFC 9922: A YANG Model for Scheduling";
+  }
+
+  grouping period-of-time {
+    description
+      "A period of time defined by a start and an end time.";
+    leaf start {
+      type yang:date-and-time;
+      description
+        "Start of the period.";
+    }
+    leaf end {
+      type yang:date-and-time;
+      description
+        "End of the period.";
+    }
+  }
+
+  grouping recurrence-icalendar {
+    description
+      "A recurrence rule as defined by iCalendar RFC 5545.";
+    leaf recurrence-icalendar {
+      type string;
+      description
+        "The recurrence rule in iCalendar format.";
+    }
+    reference
+      "RFC 5545: Internet Calendaring and Scheduling Core Object
+       Specification (iCalendar)";
+  }
+}

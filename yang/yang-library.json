@@ -1,0 +1,63 @@
+{
+  "ietf-yang-library:modules-state": {
+    "module-set-id": "l3vpn-mapping-core-subset",
+    "module": [
+      {
+        "name": "ietf-yang-types",
+        "revision": "2013-07-15",
+        "namespace": "urn:ietf:params:xml:ns:yang:ietf-yang-types",
+        "prefix": "yang",
+        "conformance-type": "implement",
+        "feature": []
+      },
+      {
+        "name": "ietf-inet-types",
+        "revision": "2013-07-15",
+        "namespace": "urn:ietf:params:xml:ns:yang:ietf-inet-types",
+        "prefix": "inet",
+        "conformance-type": "implement",
+        "feature": []
+      },
+      {
+        "name": "ietf-schedule",
+        "revision": "2024-11-03",
+        "namespace": "urn:ietf:params:xml:ns:yang:ietf-schedule",
+        "prefix": "schedule",
+        "conformance-type": "implement",
+        "feature": []
+      },
+      {
+        "name": "ietf-l3vpn-svc",
+        "revision": "2018-01-19",
+        "namespace": "urn:ietf:params:xml:ns:yang:ietf-l3vpn-svc",
+        "prefix": "l3vpn-svc",
+        "conformance-type": "implement",
+        "feature": []
+      },
+      {
+        "name": "ietf-l3vpn-ntw",
+        "revision": "2022-03-01",
+        "namespace": "urn:ietf:params:xml:ns:yang:ietf-l3vpn-ntw",
+        "prefix": "l3vpn-ntw",
+        "conformance-type": "implement",
+        "feature": []
+      },
+      {
+        "name": "ietf-l3vpn-svc-dynamic-ext",
+        "revision": "2026-02-10",
+        "namespace": "urn:ietf:params:xml:ns:yang:ietf-l3vpn-svc-dynamic-ext",
+        "prefix": "l3vpn-svc-dyn",
+        "conformance-type": "implement",
+        "feature": []
+      },
+      {
+        "name": "ietf-l3vpn-ntw-ext",
+        "revision": "2026-10-28",
+        "namespace": "urn:ietf:params:xml:ns:yang:ietf-l3vpn-ntw-ext",
+        "prefix": "l3vpn-ntw-ext",
+        "conformance-type": "implement",
+        "feature": []
+      }
+    ]
+  }
+}

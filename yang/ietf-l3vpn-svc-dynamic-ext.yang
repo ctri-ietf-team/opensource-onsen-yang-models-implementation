@@ -1,0 +1,294 @@
+module ietf-l3vpn-svc-dynamic-ext {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-l3vpn-svc-dynamic-ext";
+  prefix l3vpn-svc-dyn;
+
+  import ietf-l3vpn-svc {
+    prefix l3vpn-svc;
+    reference
+      "RFC 8299: YANG Data Model for L3VPN Service Delivery";
+  }
+  import ietf-inet-types {
+    prefix inet;
+    reference
+      "RFC 6991: Common YANG Data Types";
+  }
+
+  organization
+    "IETF OPSAWG (Operations and Management Area Working Group)";
+  contact
+    "WG Web:   <https://datatracker.ietf.org/wg/opsawg/>";
+  description
+    "This module extends ietf-l3vpn-svc with dynamic L3VPN service
+     delivery parameters (classification policies, SLO/SLE profiles,
+     temporary connections, IP connection security).
+     Extracted from draft-huang-onsen-l3vpn-model-mapping.";
+
+  revision 2026-02-10 {
+    description
+      "Initial revision.";
+  }
+
+  grouping classification-policy-grouping {
+    description
+      "Classification policy for dynamic L3VPN service delivery.";
+    list classification-policy {
+      key "rule-id";
+      description
+        "A classification rule.";
+      leaf rule-id {
+        type string;
+        mandatory true;
+        description
+          "Identifier of the rule.";
+      }
+      choice match-type {
+        mandatory true;
+        description
+          "Match type of the rule.";
+        case match-flow {
+          container match-flow {
+            description
+              "Match on flow fields.";
+            leaf dscp {
+              type inet:dscp;
+              description
+                "DSCP value to match.";
+            }
+            leaf dot1p {
+              type uint8 {
+                range "0..7";
+              }
+              description
+                "802.1p priority to match.";
+            }
+            leaf protocol-field {
+              type uint8;
+              description
+                "IP protocol number to match.";
+            }
+            leaf ipv4-src-prefix {
+              type inet:ipv4-prefix;
+              description
+                "IPv4 source prefix to match.";
+            }
+            leaf ipv4-dst-prefix {
+              type inet:ipv4-prefix;
+              description
+                "IPv4 destination prefix to match.";
+            }
+            leaf ipv6-src-prefix {
+              type inet:ipv6-prefix;
+              description
+                "IPv6 source prefix to match.";
+            }
+            leaf ipv6-dst-prefix {
+              type inet:ipv6-prefix;
+              description
+                "IPv6 destination prefix to match.";
+            }
+            leaf l4-src-port {
+              type inet:port-number;
+              description
+                "L4 source port to match.";
+            }
+            leaf l4-dst-port {
+              type inet:port-number;
+              description
+                "L4 destination port to match.";
+            }
+            leaf l4-src-port-range {
+              type string;
+              description
+                "L4 source port range to match (e.g., '1000-2000').";
+            }
+            leaf l4-dst-port-range {
+              type string;
+              description
+                "L4 destination port range to match (e.g., '1000-2000').";
+            }
+          }
+        }
+        case match-application {
+          leaf match-application {
+            type string;
+            description
+              "Application name to match.";
+          }
+        }
+      }
+      leaf target-class-id {
+        type string;
+        description
+          "Target QoS class identifier.";
+      }
+      leaf-list target-sites {
+        type leafref {
+          path "/l3vpn-svc:l3vpn-svc/l3vpn-svc:vpn-services"
+             + "/l3vpn-svc:vpn-service/l3vpn-svc:sites"
+             + "/l3vpn-svc:site/l3vpn-svc:site-id";
+        }
+        description
+          "Target sites of the rule.";
+      }
+    }
+  }
+
+  grouping dynamic-qos-profile {
+    description
+      "Dynamic QoS profile referencing an SLO/SLE profile.";
+    container qos {
+      description
+        "QoS parameters.";
+      container qos-profile {
+        description
+          "QoS profile reference.";
+        leaf slo-sle-profile {
+          type leafref {
+            path "/l3vpn-svc:l3vpn-svc/l3vpn-svc:vpn-profiles"
+               + "/l3vpn-svc-dyn:slo-sle-profiles"
+               + "/l3vpn-svc-dyn:slo-sle-profile/l3vpn-svc-dyn:id";
+          }
+          description
+            "Reference to an SLO/SLE profile.";
+        }
+      }
+    }
+  }
+
+  augment "/l3vpn-svc:l3vpn-svc/l3vpn-svc:vpn-profiles" {
+    description
+      "Augment VPN profiles with dynamic service profiles.";
+    container maximum-adjustment-profiles {
+      description
+        "Maximum adjustment profiles.";
+      list maximum-adjustment-profile {
+        key "id";
+        description
+          "A maximum adjustment profile.";
+        leaf id {
+          type string;
+          mandatory true;
+          description
+            "Identifier of the profile.";
+        }
+        leaf max-bandwidth {
+          type uint64;
+          units "bps";
+          description
+            "Maximum adjustable bandwidth.";
+        }
+        leaf max-latency {
+          type uint32;
+          units "ms";
+          description
+            "Maximum adjustable latency.";
+        }
+      }
+    }
+    container slo-sle-profiles {
+      description
+        "SLO/SLE profiles.";
+      list slo-sle-profile {
+        key "id";
+        description
+          "An SLO/SLE profile.";
+        leaf id {
+          type string;
+          mandatory true;
+          description
+            "Identifier of the profile.";
+        }
+        leaf latency {
+          type uint32;
+          units "ms";
+          description
+            "Latency objective.";
+        }
+        leaf jitter {
+          type uint32;
+          units "ms";
+          description
+            "Jitter objective.";
+        }
+        leaf packet-loss {
+          type uint32;
+          description
+            "Packet loss objective (1e-6 units).";
+        }
+      }
+    }
+  }
+
+  augment "/l3vpn-svc:l3vpn-svc/l3vpn-svc:vpn-services"
+        + "/l3vpn-svc:vpn-service/l3vpn-svc:sites/l3vpn-svc:site" {
+    description
+      "Augment site with dynamic service parameters.";
+    leaf temporary-connection-indicator {
+      type boolean;
+      description
+        "Indicates a temporary connection.";
+    }
+    container service {
+      description
+        "Dynamic service parameters at site level.";
+      uses l3vpn-svc-dyn:dynamic-qos-profile;
+    }
+  }
+
+  augment "/l3vpn-svc:l3vpn-svc/l3vpn-svc:vpn-services"
+        + "/l3vpn-svc:vpn-service/l3vpn-svc:sites/l3vpn-svc:site"
+        + "/l3vpn-svc:site-network-accesses"
+        + "/l3vpn-svc:site-network-access" {
+    description
+      "Augment site network access with dynamic service parameters.";
+    container service {
+      description
+        "Dynamic service parameters at access level.";
+      container dynamic-l3vpn {
+        description
+          "Dynamic L3VPN parameters.";
+        leaf dynamic-l3vpn-id {
+          type string;
+          description
+            "Identifier of the dynamic L3VPN.";
+        }
+        leaf adjustment-mode {
+          type enumeration {
+            enum manual {
+              description
+                "Manual adjustment.";
+            }
+            enum automatic {
+              description
+                "Automatic adjustment.";
+            }
+          }
+          description
+            "Adjustment mode of the dynamic L3VPN.";
+        }
+      }
+      uses l3vpn-svc-dyn:classification-policy-grouping;
+      uses l3vpn-svc-dyn:dynamic-qos-profile;
+    }
+    container ip-connection-security {
+      description
+        "Security parameters of the IP connection.";
+      leaf security-policy-id {
+        type string;
+        description
+          "Reference to a security policy.";
+      }
+      leaf-list allowed-ipv4-prefixes {
+        type inet:ipv4-prefix;
+        description
+          "Allowed IPv4 prefixes.";
+      }
+      leaf-list allowed-ipv6-prefixes {
+        type inet:ipv6-prefix;
+        description
+          "Allowed IPv6 prefixes.";
+      }
+    }
+  }
+}

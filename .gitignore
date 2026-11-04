@@ -1,0 +1,14 @@
+# ---- 绿色版自带 Python 运行时（51MB 第三方环境，不进仓库）----
+# 开源仓库用 requirements.txt 声明依赖；绿色版完整包通过 GitHub Releases 分发
+runtime/
+
+# ---- Python 缓存 ----
+__pycache__/
+*.pyc
+*.pyo
+
+# ---- 临时文件 ----
+.tmp/
+*.log
+Thumbs.db
+.DS_Store

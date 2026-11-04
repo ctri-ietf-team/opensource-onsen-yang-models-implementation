@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+yangson
+pyang
+python-multipart
+wsproto

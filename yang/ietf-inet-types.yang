@@ -1,0 +1,202 @@
+module ietf-inet-types {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-inet-types";
+  prefix inet;
+
+  organization
+    "IETF NETMOD (NETCONF Data Modeling Language) Working Group";
+  contact
+    "WG Web:   <https://datatracker.ietf.org/wg/netmod/>";
+  description
+    "This module contains a collection of generally useful derived
+     YANG data types for Internet addresses and related things.
+     CORE SUBSET for L3VPN mapping prototype.";
+
+  revision 2013-07-15 {
+    description
+      "This revision adds the following new data types:
+       - inet:ip-address-no-zone
+       - inet:ipv4-address-no-zone
+       - inet:ipv6-address-no-zone";
+    reference
+      "RFC 6991: Common YANG Data Types";
+  }
+
+  typedef ip-version {
+    type enumeration {
+      enum unknown {
+        value "0";
+        description
+          "An unknown or unspecified version of the Internet
+           protocol.";
+      }
+      enum ipv4 {
+        value "1";
+        description
+          "The IPv4 protocol as defined in RFC 791.";
+      }
+      enum ipv6 {
+        value "2";
+        description
+          "The IPv6 protocol as defined in RFC 2460.";
+      }
+    }
+    description
+      "This value represents the version of the IP protocol.";
+    reference
+      "RFC 791: Internet Protocol
+       RFC 2460: Internet Protocol, Version 6 (IPv6) Specification";
+  }
+
+  typedef dscp {
+    type uint8 {
+      range "0..63";
+    }
+    description
+      "The dscp type represents a Differentiated Services Code Point
+       that may be used for marking packets in a traffic stream.";
+    reference
+      "RFC 3289: Management Information Base for the Differentiated
+       Services Architecture";
+  }
+
+  typedef ipv6-flow-label {
+    type uint32 {
+      range "0..1048575";
+    }
+    description
+      "The ipv6-flow-label type represents the flow identifier or
+       Flow Label in an IPv6 packet header that may be used to
+       discriminate traffic flows.";
+    reference
+      "RFC 3595: Textual Conventions for IPv6 Flow Label";
+  }
+
+  typedef port-number {
+    type uint16 {
+      range "0..65535";
+    }
+    description
+      "The port-number type represents a 16-bit port number of an
+       Internet transport-layer protocol such as UDP, TCP, DCCP, or
+       SCTP.";
+    reference
+      "RFC 768: User Datagram Protocol
+       RFC 793: Transmission Control Protocol";
+  }
+
+  typedef as-number {
+    type uint32;
+    description
+      "The as-number type represents autonomous system numbers
+       which identify an Autonomous System (AS).";
+    reference
+      "RFC 1930: Guidelines for creation, selection, and
+       registration of an Autonomous System (AS)
+       RFC 4271: A Border Gateway Protocol 4 (BGP-4)";
+  }
+
+  typedef ip-address {
+    type union {
+      type inet:ipv4-address;
+      type inet:ipv6-address;
+    }
+    description
+      "The ip-address type represents an IP address and is IP
+       version neutral.";
+  }
+
+  typedef ipv4-address {
+    type string {
+      pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}'
+            + '([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+            + '(%[\p{N}\p{L}]+)?';
+    }
+    description
+      "The ipv4-address type represents an IPv4 address in
+       dotted-quad notation.";
+  }
+
+  typedef ipv6-address {
+    type string {
+      pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
+            + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
+            + '(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}'
+            + '(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])))'
+            + '(%[\p{N}\p{L}]+)?';
+      pattern '(([^:]+:){6}(([^:]+:[^:]+)|(.*\..*)))|'
+            + '((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)'
+            + '(%.+)?';
+    }
+    description
+      "The ipv6-address type represents an IPv6 address in full,
+       mixed, shortened, and shortened-mixed notation.";
+  }
+
+  typedef ip-prefix {
+    type union {
+      type inet:ipv4-prefix;
+      type inet:ipv6-prefix;
+    }
+    description
+      "The ip-prefix type represents an IP prefix and is IP
+       version neutral.";
+  }
+
+  typedef ipv4-prefix {
+    type string {
+      pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}'
+            + '([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+            + '/(([0-9])|([1-2][0-9])|(3[0-2]))';
+    }
+    description
+      "The ipv4-prefix type represents an IPv4 address prefix.";
+  }
+
+  typedef ipv6-prefix {
+    type string {
+      pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
+            + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
+            + '(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}'
+            + '(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])))'
+            + '(/(([0-9])|([0-9]{2})|(1[0-1][0-9])|(12[0-8])))';
+      pattern '(([^:]+:){6}(([^:]+:[^:]+)|(.*\..*)))|'
+            + '((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)'
+            + '(/.+)?';
+    }
+    description
+      "The ipv6-prefix type represents an IPv6 address prefix.";
+  }
+
+  typedef domain-name {
+    type string {
+      length "1..253";
+      pattern '((([a-zA-Z0-9_]([a-zA-Z0-9\-_]){0,61})?[a-zA-Z0-9]\.)*'
+            + '([a-zA-Z0-9_]([a-zA-Z0-9\-_]){0,61})?[a-zA-Z0-9]\.?)'
+            + '|\.';
+    }
+    description
+      "The domain-name type represents a DNS domain name.";
+    reference
+      "RFC 1035: Domain Names - Implementation and Specification";
+  }
+
+  typedef host {
+    type union {
+      type inet:ip-address;
+      type inet:domain-name;
+    }
+    description
+      "The host type represents a host that is either an IP address
+       or a DNS domain name.";
+  }
+
+  typedef uri {
+    type string;
+    description
+      "The uri type represents a Uniform Resource Identifier (URI)
+       as defined by STD 66.";
+    reference
+      "RFC 3986: Uniform Resource Identifier (URI): Generic Syntax";
+  }
+}

@@ -1,0 +1,3009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三层模型映射实验室 · 页面一（三栏联动映射实验室）</title>
+<style>
+/* ============================================================
+   页面一 · 三栏联动映射实验室
+   依据《L3SM到L3NM到设备模型无损映射原型系统开发任务说明书》4.1 节
+   说明：映射引擎与组件联动逻辑后续接入，本页为 UI 骨架 + 静态演示态
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue: #3b82f6;
+  --blue-dark: #2563eb;
+  --navy: #1e3a5f;
+  --ink: #1f2d3d;
+  --gray: #5b6b80;
+  --gray-light: #94a3b8;
+  --line: #dbe4ef;
+  --bg-soft: #f4f7fb;
+  --bg-blue: #e8f0fe;
+  --orange: #d97706;
+  --orange-bg: #FFF3E0;
+  --green: #16a34a;
+  --green-bg: #E8F5E9;
+  --red: #C62828;
+  --red-bg: #FCE4EC;
+  --code-bg: #0f1e33;
+  --code-fg: #dbe4ef;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", "Noto Sans SC", sans-serif;
+  background: linear-gradient(160deg, #f8fafc 0%, #ffffff 45%, #cfe0f5 100%);
+  min-height: 100vh;
+  color: var(--ink);
+  line-height: 1.6;
+  padding: 14px;
+}
+.mono { font-family: Consolas, 'Cascadia Code', 'SF Mono', monospace; }
+
+/* ========== 浏览器风格顶栏 ========== */
+.browser-bar {
+  display: flex; align-items: center; gap: 12px;
+  background: #e6edf6; border: 1px solid var(--line);
+  border-radius: 12px 12px 0 0; padding: 8px 14px;
+  max-width: 1440px; margin: 0 auto;
+}
+.browser-bar .dots { display: flex; gap: 6px; }
+.browser-bar .dots i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.browser-bar .dots i:nth-child(1) { background: var(--orange); }
+.browser-bar .dots i:nth-child(2) { background: var(--green); }
+.browser-bar .dots i:nth-child(3) { background: var(--blue); }
+.browser-bar .url {
+  flex: 1; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+  padding: 4px 12px; font-size: 12.5px; color: var(--gray);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.browser-bar .url b { color: var(--ink); font-weight: 600; }
+.follow-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: var(--blue-dark);
+  background: #fff; border: 1px solid var(--blue); border-radius: 20px;
+  padding: 3px 12px; cursor: pointer; user-select: none; white-space: nowrap;
+}
+.follow-toggle .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.18); }
+.follow-toggle.off { color: var(--gray); border-color: var(--gray-light); }
+.follow-toggle.off .dot { background: var(--gray-light); box-shadow: none; }
+
+/* ========== 无损指标看板 ========== */
+.metrics-bar {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  max-width: 1440px; margin: 0 auto; padding: 10px 14px;
+  background: #fff; border: 1px solid var(--line); border-top: none;
+}
+.metric {
+  flex: 1; min-width: 150px; display: flex; align-items: center; gap: 10px;
+  background: var(--bg-soft); border-radius: 10px; padding: 8px 14px;
+  border-top: 3px solid var(--blue);
+}
+.metric .num { font-size: 20px; font-weight: 800; color: var(--blue-dark); line-height: 1; }
+.metric .num.ok { color: var(--green); }
+.metric .label { font-size: 11.5px; color: var(--gray); }
+.metric .hint { font-size: 10px; color: var(--gray-light); margin-left: auto; white-space: nowrap; }
+
+/* ========== 三栏主布局 ========== */
+.layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) 300px;
+  gap: 12px;
+  max-width: 1440px; margin: 12px auto 0;
+  align-items: start;
+}
+.col { background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+
+/* ========== 左栏 · 链路导航 ========== */
+.left-col { position: sticky; top: 12px; }
+.nav-title {
+  padding: 12px 14px; font-size: 13px; font-weight: 700; color: var(--ink);
+  background: var(--bg-soft); border-bottom: 1px solid var(--line);
+}
+.module-card {
+  margin: 10px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: #fff;
+  cursor: pointer; transition: all .18s ease;
+}
+.module-card:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(59,130,246,.15); }
+.module-card.active { border: 2px solid var(--blue); background: #eef5ff; }
+.module-card .m-head { display: flex; align-items: center; gap: 7px; }
+.module-card .m-head .name { font-size: 13px; font-weight: 700; color: var(--navy); }
+.status-light { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.status-light.green { background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.18); }
+.status-light.orange { background: var(--orange); box-shadow: 0 0 0 3px rgba(217,119,6,.18); }
+.status-light.gray { background: var(--gray-light); }
+.module-card .m-sub { font-size: 11px; color: var(--gray); margin-top: 4px; line-height: 1.5; }
+.module-card .m-state { font-size: 10.5px; margin-top: 4px; }
+.module-card .m-state.ok { color: var(--green); }
+.module-card .m-state.busy { color: var(--orange); }
+.module-card .m-state.wait { color: var(--orange); }
+.module-card .m-ref { font-size: 10px; color: var(--gray-light); margin-top: 2px; }
+.module-card.disabled { border-style: dashed; border-color: #c9d6f3; cursor: default; }
+.module-card.disabled:hover { border-color: #c9d6f3; box-shadow: none; }
+.nav-hint { padding: 4px 14px 2px; font-size: 10.5px; color: var(--gray); line-height: 1.7; }
+.page2-entry {
+  display: block; margin: 10px; padding: 8px; text-align: center;
+  font-size: 12px; font-weight: 700; color: var(--blue-dark);
+  background: var(--bg-blue); border: 1px dashed var(--blue); border-radius: 8px;
+  text-decoration: none;
+}
+.page2-entry:hover { background: #dbe7fd; }
+
+/* ========== 中栏 · 三段 ========== */
+.mid-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.segment { border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; box-shadow: var(--shadow); }
+.segment > header {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--navy); color: #fff; padding: 9px 14px;
+}
+.segment > header .seg-title { font-size: 13px; font-weight: 700; }
+.segment > header .seg-meta { margin-left: auto; font-size: 11px; color: rgba(255,255,255,.75); }
+.seg-body { padding: 12px 14px; }
+.seg-foot {
+  padding: 7px 14px; font-size: 10.5px; color: var(--gray);
+  background: var(--bg-soft); border-top: 1px solid var(--line);
+}
+
+/* 视图切换（JSON / tree） */
+.view-toggle { display: inline-flex; border: 1px solid rgba(255,255,255,.4); border-radius: 7px; overflow: hidden; }
+.view-toggle button {
+  border: none; background: transparent; color: rgba(255,255,255,.8);
+  font-size: 10.5px; padding: 2px 10px; cursor: pointer;
+}
+.view-toggle button.on { background: #fff; color: var(--navy); font-weight: 700; }
+
+/* 经典 / 增强 子页签 */
+.sub-tabs { display: flex; gap: 6px; padding: 8px 14px 0; background: #fff; }
+.sub-tabs button {
+  border: 1px solid var(--line); background: var(--bg-soft); color: var(--gray);
+  font-size: 11.5px; padding: 3px 16px; border-radius: 8px 8px 0 0;
+  cursor: pointer; border-bottom: none; font-weight: 600; font-family: inherit;
+}
+.sub-tabs button.on { background: var(--navy); color: #fff; }
+.sub-tabs button .cnt { font-size: 9.5px; opacity: .75; margin-left: 3px; }
+.part-pane[hidden] { display: none; }
+.part-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; color: var(--navy);
+  background: var(--bg-blue); border-left: 3px solid var(--blue);
+  padding: 4px 10px; border-radius: 0 6px 6px 0; margin-bottom: 10px;
+}
+.part-title .src { font-weight: 400; color: var(--gray); font-size: 10px; }
+.enh-group { margin-bottom: 12px; }
+.enh-group-title {
+  font-size: 11.5px; font-weight: 700; color: var(--ink);
+  padding: 5px 10px; background: var(--bg-soft); border-radius: 6px;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.enh-group-title .tag-ext {
+  background: var(--red-bg); color: var(--red); font-size: 9px;
+  font-weight: 700; border-radius: 7px; padding: 0 7px;
+}
+.enh-group-title .tag-draft { font-size: 9.5px; color: var(--gray); font-weight: 400; }
+
+/* ========== 段 A · L3SM 表单 ========== */
+.form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 11px; color: var(--gray); font-weight: 600; }
+.field label .req { color: var(--red); }
+.field input, .field select {
+  border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px;
+  font-size: 12.5px; color: var(--ink); background: #fff; width: 100%;
+  font-family: inherit;
+}
+.field input:focus, .field select:focus { outline: 2px solid rgba(59,130,246,.4); border-color: var(--blue); }
+.field input[readonly] { background: var(--bg-soft); color: var(--gray); }
+/* 本批变更高亮（橙） */
+.field.changed { position: relative; }
+.field.changed input, .field.changed select { border: 1.6px solid var(--orange); background: var(--orange-bg); }
+.field.derived input { border: 1.6px solid var(--green); background: var(--green-bg); }
+/* 因果编号徽标 */
+.num-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 17px; height: 17px; border-radius: 50%;
+  font-size: 10.5px; font-weight: 700; color: #fff; cursor: pointer;
+  background: var(--orange); box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.num-badge.green { background: var(--green); }
+.num-badge.gray { background: var(--gray-light); }
+.field .badge-row { position: absolute; top: 20px; right: -6px; }
+.collapse-zone { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.collapse-zone summary { font-size: 11.5px; color: var(--blue-dark); cursor: pointer; font-weight: 600; }
+.collapse-zone .more-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; margin-top: 8px; }
+
+/* ========== 段 B / C · 代码视图 ========== */
+.code-view {
+  background: var(--code-bg); color: var(--code-fg); border-radius: 8px;
+  padding: 10px 12px; font-size: 12px; line-height: 1.75;
+  overflow-x: auto; max-height: 300px; overflow-y: auto;
+  font-family: Consolas, 'Cascadia Code', 'SF Mono', monospace;
+}
+.code-view .ln { color: #475569; user-select: none; display: inline-block; width: 26px; }
+.code-view .k { color: #7dd3fc; }   /* key */
+.code-view .s { color: #a5d6a7; }   /* string */
+.code-view .c { color: #64748b; font-style: italic; } /* comment */
+.code-view .hl-orange { background: rgba(217,119,6,.28); border-radius: 3px; outline: 1px solid var(--orange); }
+.code-view .hl-green { background: rgba(22,163,74,.25); border-radius: 3px; outline: 1px solid var(--green); }
+.code-view .hl-flash { animation: flash 1.2s ease 2; }
+@keyframes flash {
+  0%, 100% { background: rgba(59,130,246,.0); }
+  50% { background: rgba(59,130,246,.45); }
+}
+.code-line { position: relative; white-space: pre; }
+.code-line .num-badge { position: absolute; right: 2px; top: 2px; }
+.tree-view {
+  background: var(--code-bg); color: var(--code-fg); border-radius: 8px;
+  padding: 10px 12px; font-size: 12px; line-height: 1.8;
+  overflow: auto; max-height: 300px;
+  font-family: Consolas, 'Cascadia Code', 'SF Mono', monospace;
+}
+.tree-view .t-node { color: #7dd3fc; }
+.tree-view .t-leaf { color: #a5d6a7; }
+.tree-view .t-mark { color: #fbbf24; }
+
+/* 设备页签（段 C） */
+.device-tabs { display: flex; gap: 6px; padding: 8px 14px 0; }
+.device-tabs button {
+  border: 1px solid var(--line); background: #fff; color: var(--gray);
+  font-size: 11.5px; padding: 3px 14px; border-radius: 8px 8px 0 0;
+  cursor: pointer; border-bottom: none; font-weight: 600;
+}
+.device-tabs button.on { background: var(--code-bg); color: #fff; }
+.device-tabs button .dot-badge {
+  display: inline-block; min-width: 14px; height: 14px; line-height: 14px;
+  border-radius: 7px; background: var(--orange); color: #fff;
+  font-size: 9.5px; text-align: center; margin-left: 4px;
+}
+.device-pane { padding: 0 14px 12px; }
+.device-pane[hidden] { display: none; }
+
+/* ========== 右栏 · 双映射面板 ========== */
+.right-col { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 12px; }
+.map-table-link {
+  display: block; text-align: right; font-size: 11.5px; font-weight: 700;
+  color: var(--blue-dark); background: var(--bg-blue);
+  border: 1px dashed var(--blue); border-radius: 8px;
+  padding: 5px 10px; text-decoration: none;
+}
+.map-table-link:hover { background: #dbe7fd; }
+.mapping-panel { border: 1px solid var(--gray-light); border-radius: 12px; background: #fff; overflow: hidden; box-shadow: var(--shadow); }
+.mapping-panel > header {
+  background: var(--bg-soft); padding: 8px 12px; text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+.mapping-panel > header .mp-title { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.mapping-panel > header .mp-draft { font-size: 10px; color: var(--gray); margin-top: 1px; }
+.rule-list { padding: 8px; }
+.rule-row {
+  position: relative; border: 1px solid var(--line); border-radius: 6px;
+  padding: 6px 8px; margin-bottom: 6px; cursor: pointer;
+  transition: all .15s ease; background: #fff;
+}
+.rule-row:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(59,130,246,.15); }
+.rule-row.copy { border-left: 3px solid var(--orange); background: var(--orange-bg); }
+.rule-row.derive { border-left: 3px solid var(--green); background: var(--green-bg); }
+.rule-row.plain { border-left: 3px solid var(--line); }
+.rule-row .r-name { font-size: 11.5px; font-weight: 600; color: var(--ink); padding-right: 22px; }
+.rule-row .r-meta { font-size: 9.5px; color: var(--gray); margin-top: 1px; }
+.rule-row .num-badge { position: absolute; right: 6px; top: 6px; }
+.rule-row.hl-flash { animation: flash 1.2s ease 2; }
+.field.hl-flash { animation: flash 1.2s ease 2; }
+.metric .num.busy { color: var(--orange); }
+.metrics-bar.computing .metric { border-top-color: var(--orange); transition: border-color .2s; }
+.mp-foot {
+  padding: 6px 10px; font-size: 10px; color: var(--gray);
+  background: var(--bg-soft); border-top: 1px solid var(--line); text-align: center;
+}
+
+/* ========== 图例 ========== */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  max-width: 1440px; margin: 12px auto 0; padding: 8px 14px;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  font-size: 11px; color: var(--gray);
+}
+.legend .lg { display: inline-flex; align-items: center; gap: 5px; }
+.legend .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend .sw.orange { background: var(--orange-bg); border: 1.5px solid var(--orange); }
+.legend .sw.green { background: var(--green-bg); border: 1.5px solid var(--green); }
+.legend .sw.dash { border: 1.5px dashed var(--gray-light); background: #fff; }
+
+/* ========== 变更台账 ========== */
+.ledger {
+  max-width: 1440px; margin: 12px auto 0; background: #fff;
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow);
+}
+.ledger-toggle {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  background: var(--bg-soft); border: none; padding: 10px 14px;
+  font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; font-family: inherit;
+}
+.ledger-toggle .arrow { transition: transform .2s; color: var(--gray); }
+.ledger.open .ledger-toggle .arrow { transform: rotate(180deg); }
+.ledger-body { display: none; }
+.ledger.open .ledger-body { display: block; }
+.ledger table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ledger th { background: var(--bg-blue); color: var(--navy); padding: 7px 12px; text-align: left; font-weight: 700; border-bottom: 1px solid var(--line); }
+.ledger td { padding: 6px 12px; border-bottom: 1px solid var(--line); color: var(--ink); }
+.ledger tr:last-child td { border-bottom: none; }
+.ledger .tag { display: inline-block; padding: 0 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.ledger .tag.batch { background: var(--orange-bg); color: var(--orange); }
+.ledger .tag.derive { background: var(--green-bg); color: var(--green); }
+
+/* ========== Toast ========== */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--navy); color: #fff; font-size: 12.5px;
+  padding: 9px 18px; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 999;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ========== 响应式 ========== */
+@media screen and (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+  .left-col, .right-col { position: static; }
+  .form-grid, .collapse-zone .more-fields { grid-template-columns: repeat(2, 1fr); }
+}
+@media screen and (max-width: 640px) {
+  .form-grid, .collapse-zone .more-fields { grid-template-columns: 1fr; }
+  .metrics-bar { flex-direction: column; }
+}
+
+/* ========== 内嵌映射关系总表（单文件自包含，替代独立页面） ========== */
+.map-table-embed {
+  max-width: 1440px; margin: 12px auto 0;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: #fff; box-shadow: var(--shadow); overflow: hidden;
+}
+.map-table-embed > summary {
+  cursor: pointer; padding: 10px 14px; font-size: 13px; font-weight: 700;
+  color: var(--blue-dark); background: var(--bg-soft);
+  list-style: none; display: flex; align-items: center; gap: 8px;
+}
+.map-table-embed > summary::-webkit-details-marker { display: none; }
+.map-table-embed > summary .arrow { transition: transform .2s; color: var(--gray); }
+.map-table-embed[open] > summary .arrow { transform: rotate(180deg); }
+.map-table-embed > summary .mt-hint { margin-left: auto; font-size: 10.5px; font-weight: 400; color: var(--gray); }
+.map-table-embed[open] > summary { border-bottom: 1px solid var(--line); }
+.map-table-embed .mt-inner { padding: 14px 16px 18px; }
+.map-table-embed .mt-note {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  margin: 0 0 12px; padding: 10px 14px;
+  background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px;
+  font-size: 11.5px; color: var(--gray);
+}
+.map-table-embed .mt-note .src { font-weight: 700; color: var(--ink); }
+.map-table-embed .mt-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: var(--gray); }
+.map-table-embed .mt-legend .lg { display: inline-flex; align-items: center; gap: 5px; }
+.map-table-embed .type-tag { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+.map-table-embed .type-d  { background: var(--orange-bg); color: var(--orange); }
+.map-table-embed .type-r  { background: var(--green-bg); color: var(--green); }
+.map-table-embed .type-n  { background: #eef1f5; color: var(--gray); }
+.map-table-embed .type-dr { background: #fff3cd; color: #8a6d1a; }
+.map-table-embed .mt-section { margin-top: 16px; }
+.map-table-embed .mt-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 800; color: #fff;
+  background: var(--navy); padding: 8px 14px; border-radius: 8px 8px 0 0;
+}
+.map-table-embed .mt-section-title .tag-ext {
+  background: var(--red-bg); color: var(--red); font-size: 9.5px;
+  font-weight: 700; border-radius: 7px; padding: 0 8px;
+}
+.map-table-embed .mt-section-title .sec-src { margin-left: auto; font-size: 11px; font-weight: 400; color: rgba(255,255,255,.75); }
+.map-table-embed .table-box { border: 1px solid var(--line); border-top: none; border-radius: 0 0 8px 8px; overflow-x: auto; }
+.map-table-embed table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; }
+.map-table-embed th {
+  background: var(--bg-blue); color: var(--navy); padding: 8px 12px;
+  text-align: left; font-weight: 700; border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.map-table-embed td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.map-table-embed tbody tr:last-child td { border-bottom: none; }
+.map-table-embed tbody tr:nth-child(even) td { background: var(--bg-soft); }
+.map-table-embed td .mono { font-size: 11.5px; }
+.map-table-embed td .sub { display: block; font-size: 10.5px; color: var(--gray); margin-top: 2px; }
+.map-table-embed .gap { display: inline-block; background: var(--red-bg); color: var(--red); font-size: 9.5px; font-weight: 700; border-radius: 7px; padding: 0 7px; margin-left: 4px; }
+.map-table-embed details.collapse { margin-top: 16px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.map-table-embed details.collapse summary {
+  cursor: pointer; font-size: 13px; font-weight: 700; color: var(--blue-dark);
+  padding: 10px 14px; background: var(--bg-soft); border-radius: 8px;
+}
+.map-table-embed details.collapse[open] summary { border-radius: 8px 8px 0 0; border-bottom: 1px solid var(--line); }
+.map-table-embed details.collapse .inner { padding: 12px 14px; }
+.map-table-embed .mt-foot { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--gray); line-height: 1.8; }
+.map-table-embed .mt-foot b { color: var(--ink); }
+
+/* ===== 研究人员扩展区：draft 上传 / 模型特征 / 映射定义 ===== */
+.draft-box { margin-top: 8px; border: 1px dashed var(--line); border-radius: 8px; padding: 8px; background: rgba(255,255,255,.55); }
+.draft-box .draft-name { width: 100%; box-sizing: border-box; font-size: 11px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); }
+.draft-box .draft-actions { display: flex; gap: 6px; margin-top: 6px; }
+.draft-box .draft-upload-btn {
+  flex: 1; font-size: 11px; font-weight: 700; padding: 5px 0; border: none; border-radius: 6px;
+  background: var(--blue-dark); color: #fff; cursor: pointer;
+}
+.draft-box .draft-upload-btn:hover { filter: brightness(1.1); }
+.draft-box .draft-upload-btn:disabled { background: var(--gray); cursor: wait; }
+.draft-box .draft-status { margin-top: 6px; font-size: 10px; color: var(--gray); word-break: break-all; }
+.draft-box .draft-status b { color: var(--blue-dark); }
+.draft-box .draft-err { margin-top: 5px; font-size: 10px; color: var(--red); word-break: break-all; }
+
+.model-features { margin: 10px 0 4px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.model-features summary {
+  cursor: pointer; font-size: 12px; font-weight: 700; color: var(--blue-dark);
+  padding: 8px 12px; background: var(--bg-soft); border-radius: 8px; user-select: none;
+}
+.model-features[open] summary { border-radius: 8px 8px 0 0; border-bottom: 1px solid var(--line); }
+.model-features .feat-count { color: var(--gray); font-weight: 400; }
+.model-features .feature-tree { padding: 10px 12px; max-height: 260px; overflow: auto; font-size: 11.5px; line-height: 1.75; }
+.feature-tree .ft-module { font-weight: 700; color: var(--navy); }
+.feature-tree .ft-augment { color: var(--purple, #7c3aed); font-weight: 700; }
+.feature-tree .ft-container { color: var(--blue-dark); font-weight: 600; }
+.feature-tree .ft-list { color: var(--teal, #0f766e); font-weight: 600; }
+.feature-tree .ft-leaf { color: var(--ink); }
+.feature-tree .ft-type { color: var(--gray); font-size: 10px; }
+.feature-tree .ft-desc { color: var(--gray-light); font-size: 10px; }
+.feature-tree .ft-empty { color: var(--gray); font-style: italic; }
+
+.mapping-define { border: 1px solid var(--line); border-radius: 10px; background: #fff; margin-bottom: 12px; overflow: hidden; }
+.mapping-define > header { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; background: var(--bg-blue); border-bottom: 1px solid var(--line); }
+.mapping-define .mp-title { font-size: 13px; font-weight: 800; color: var(--navy); }
+.mapping-define .mp-draft { font-size: 10px; color: var(--gray); }
+.md-tabs { display: flex; gap: 4px; padding: 8px 12px 0; }
+.md-tabs button {
+  font-size: 11px; font-weight: 700; padding: 5px 12px; border: 1px solid var(--line);
+  border-bottom: none; border-radius: 7px 7px 0 0; background: var(--bg-soft); color: var(--gray); cursor: pointer;
+}
+.md-tabs button.on { background: #fff; color: var(--blue-dark); border-color: var(--line); }
+.md-pane { padding: 10px 12px; }
+.md-pane textarea {
+  width: 100%; box-sizing: border-box; min-height: 150px; font-size: 11px; font-family: ui-monospace, Menlo, Consolas, monospace;
+  border: 1px solid var(--line); border-radius: 7px; padding: 8px; color: var(--ink); background: #fbfcfe; resize: vertical;
+}
+.md-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.md-table th { background: var(--bg-soft); color: var(--navy); padding: 5px 6px; text-align: left; font-weight: 700; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.md-table td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.md-table input, .md-table select {
+  width: 100%; box-sizing: border-box; font-size: 11px; padding: 4px 6px;
+  border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--ink);
+}
+.md-table .md-del { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; font-weight: 700; }
+.md-add-row { margin: 8px 12px; font-size: 11px; font-weight: 700; padding: 5px 12px; border: 1px dashed var(--blue-dark); border-radius: 6px; background: #fff; color: var(--blue-dark); cursor: pointer; }
+.md-actions { display: flex; align-items: center; gap: 10px; padding: 0 12px 12px; }
+.md-submit {
+  font-size: 12px; font-weight: 800; padding: 7px 18px; border: none; border-radius: 7px;
+  background: var(--blue-dark); color: #fff; cursor: pointer;
+}
+.md-submit:hover { filter: brightness(1.1); }
+.md-submit:disabled { background: var(--gray); cursor: wait; }
+.md-result { font-size: 11px; color: var(--gray); line-height: 1.6; }
+.md-result .ok { color: var(--green, #16a34a); font-weight: 700; }
+.md-result .err { color: var(--red); font-weight: 700; }
+.md-result .rule-line { display: block; color: var(--ink); font-size: 10.5px; }
+</style>
+</head>
+<body>
+
+<!-- ===== 浏览器风格顶栏 ===== -->
+<div class="browser-bar">
+  <div class="dots"><i></i><i></i><i></i></div>
+  <div class="url"><b>http://localhost:5173/lab</b> &nbsp;三层模型映射实验室</div>
+  <button class="follow-toggle" id="followToggle" title="默认 ON；手动滚动任一面板自动切 OFF">
+    <span class="dot"></span>跟随模式 <span id="followState">ON</span>
+  </button>
+  <button class="follow-toggle" id="langToggle" style="margin-left:8px;font-weight:700;letter-spacing:.5px" title="切换语言 / Switch language">EN</button>
+</div>
+
+<!-- ===== 无损指标看板（右上角常驻，由引擎实时计算） ===== -->
+<div class="metrics-bar">
+  <div class="metric"><div class="num ok" id="mCoverage">100%</div><div class="label">覆盖率<br>（字段映射覆盖）</div><div class="hint">引擎实时</div></div>
+  <div class="metric"><div class="num ok" id="mDiff">=0</div><div class="label">往返 diff<br>（无损校验）</div><div class="hint">引擎实时</div></div>
+  <div class="metric"><div class="num ok" id="mTrace">100%</div><div class="label">溯源<br>（规则出处可查）</div><div class="hint">引擎实时</div></div>
+  <div class="metric"><div class="num ok" id="mResp">&lt;300ms</div><div class="label">联动响应<br>（输入→三栏高亮）</div><div class="hint">引擎实时</div></div>
+</div>
+
+<!-- ===== 三栏主布局 ===== -->
+<div class="layout">
+
+  <!-- ========== 左栏 · 系统链路导航 ========== -->
+  <aside class="col left-col">
+    <div class="nav-title">系统链路导航</div>
+
+    <div class="module-card active" data-target="seg-a">
+      <div class="m-head"><span class="status-light green"></span><span class="name">Portal</span></div>
+      <div class="m-sub">L3SM 表单</div>
+      <div class="m-state ok">● 活跃（输入中）</div>
+      <div class="m-ref">RFC 8299</div>
+      <div class="draft-box" data-layer="business">
+        <input type="text" class="draft-name" placeholder="新 draft 名称，如 draft-xxx-00">
+        <div class="draft-actions">
+          <input type="file" class="draft-file" accept=".yang" hidden>
+          <button class="draft-upload-btn">上传 YANG draft</button>
+        </div>
+        <div class="draft-status">当前: <b>ietf-l3vpn-svc</b></div>
+      </div>
+    </div>
+
+    <div class="module-card" data-target="seg-b">
+      <div class="m-head"><span class="status-light green"></span><span class="name">Orchestrator</span></div>
+      <div class="m-sub">L3NM 生成</div>
+      <div class="m-ref">RFC 9182 · RESTCONF 127.0.0.1</div>
+      <div class="draft-box" data-layer="network">
+        <input type="text" class="draft-name" placeholder="新 draft 名称，如 draft-xxx-00">
+        <div class="draft-actions">
+          <input type="file" class="draft-file" accept=".yang" hidden>
+          <button class="draft-upload-btn">上传 YANG draft</button>
+        </div>
+        <div class="draft-status">当前: <b>ietf-l3vpn-ntw</b></div>
+      </div>
+    </div>
+
+    <div class="module-card" data-target="seg-c">
+      <div class="m-head"><span class="status-light green"></span><span class="name">Controller</span></div>
+      <div class="m-sub">设备模型 OpenConfig</div>
+      <div class="m-sub">增量 / 冲突检测</div>
+      <div class="m-ref">RESTCONF 127.0.0.1</div>
+      <div class="draft-box" data-layer="device">
+        <input type="text" class="draft-name" placeholder="新 draft 名称，如 draft-xxx-00">
+        <div class="draft-actions">
+          <input type="file" class="draft-file" accept=".yang" hidden>
+          <button class="draft-upload-btn">上传 YANG draft</button>
+        </div>
+        <div class="draft-status">当前: <b>openconfig-network-instance</b></div>
+      </div>
+    </div>
+
+    <div class="module-card disabled">
+      <div class="m-head"><span class="status-light gray"></span><span class="name" style="color:var(--gray)">Router ×3</span></div>
+      <div class="m-sub">页面二激活</div>
+      <div class="m-sub">NETCONF 下发</div>
+      <div class="m-state wait">○ 待第二步解锁</div>
+    </div>
+
+    <div class="nav-hint">点击模块 = 聚焦中栏对应段<br>状态灯 = 最近一次交互位置</div>
+    <a class="page2-entry" href="#" onclick="return false;">页面二入口 →</a>
+  </aside>
+
+  <!-- ========== 中栏 · 三段内容 ========== -->
+  <main class="mid-col">
+
+    <!-- 段 A · L3SM 客户表单 -->
+    <section class="segment" id="seg-a">
+      <header>
+        <span class="seg-title">A · L3SM 客户表单（RFC 8299 + ietf-l3vpn-svc-ext）</span>
+        <span class="seg-meta">必填项 5/9</span>
+      </header>
+      <details class="model-features" data-features="business">
+        <summary>业务模型特征（YANG 解析）· <span class="feat-count">加载中…</span></summary>
+        <div class="feature-tree"></div>
+      </details>
+      <div class="sub-tabs" data-group="seg-a">
+        <button class="on" data-part="classic">经典内容<span class="cnt">RFC 8299</span></button>
+        <button data-part="enhanced">增强内容<span class="cnt">draft-fu-03</span></button>
+      </div>
+      <div class="seg-body">
+
+        <!-- ===== 经典内容 · RFC 8299 基础字段 ===== -->
+        <div class="part-pane" data-part-pane="classic">
+          <div class="part-title">经典内容 · RFC 8299 基础字段 <span class="src">（YANG 驱动生成 · pyang 编译 · yangson 校验）</span></div>
+          <div class="form-grid">
+            <div class="field">
+              <label>customer <span class="req">*</span></label>
+              <input type="text" value="customer-A" data-field="customer">
+            </div>
+            <div class="field changed" data-field="vpn-id">
+              <label>vpn-id <span class="req">*</span></label>
+              <input type="text" value="VPN-A">
+              <span class="badge-row"><span class="num-badge" data-rule="rule-vpn-id">1</span></span>
+            </div>
+            <div class="field">
+              <label>vpn-service-topology <span class="req">*</span></label>
+              <select data-field="topology">
+                <option selected>any-to-any</option>
+                <option>hub-spoke</option>
+                <option>hub-spoke-disjoint</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>site-id <span class="req">*</span></label>
+              <input type="text" value="site-1" data-field="site-id">
+            </div>
+            <div class="field">
+              <label>site-role</label>
+              <select data-field="site-role">
+                <option selected>spoke</option>
+                <option>hub</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>ip-connection</label>
+              <select data-field="ip-connection">
+                <option selected>ipv4</option>
+                <option>ipv6</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>routing-protocols</label>
+              <select data-field="routing-protocols">
+                <option selected>bgp</option>
+                <option>static</option>
+                <option>ospf</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>address-family</label>
+              <select data-field="address-family">
+                <option selected>ipv4-unicast</option>
+                <option>ipv6-unicast</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>vpn-targets</label>
+              <input type="text" value="100:100" data-field="vpn-targets">
+            </div>
+            <div class="field">
+              <label>svc-input-bandwidth</label>
+              <input type="text" value="1000000" data-field="svc-input-bandwidth">
+            </div>
+            <div class="field">
+              <label>svc-output-bandwidth</label>
+              <input type="text" value="1000000" data-field="svc-output-bandwidth">
+            </div>
+          </div>
+          <details class="collapse-zone">
+            <summary>完整字段（折叠区 · 由 YANG 树自动生成）</summary>
+            <div class="more-fields">
+              <div class="field"><label>vpn-description</label><input type="text" placeholder="—"></div>
+              <div class="field"><label>customer-name</label><input type="text" placeholder="—"></div>
+              <div class="field"><label>svc-topo-options</label><input type="text" placeholder="—"></div>
+              <div class="field"><label>site-network-access</label><input type="text" placeholder="—"></div>
+              <div class="field"><label>bearer</label><input type="text" placeholder="—"></div>
+              <div class="field"><label>routing-options</label><input type="text" placeholder="—"></div>
+            </div>
+          </details>
+        </div>
+
+        <!-- ===== 增强内容 · ietf-l3vpn-svc-ext（draft-fu-onsen-update-l3sm-service-models-03） ===== -->
+        <div class="part-pane" data-part-pane="enhanced" hidden>
+          <div class="part-title">增强内容 · ietf-l3vpn-svc-ext <span class="src">（draft-fu-onsen-update-l3sm-service-models-03 · 向后兼容 RFC 8299）</span></div>
+
+          <div class="enh-group">
+            <div class="enh-group-title"><span class="tag-ext">增强</span>① dynamic-l3vpn · 动态组网（dynamic-networking）<span class="tag-draft">§6.2 · 按需建立/释放 VPN 隧道</span></div>
+            <div class="form-grid">
+              <div class="field">
+                <label>dynamic-type</label>
+                <select data-field="dynamic-type">
+                  <option selected>dynamic-networking</option>
+                  <option>dynamic-bandwidth-adjustment</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>provisioning-delay-profile-id</label>
+                <input type="text" value="lat-prof-01" data-field="provisioning-delay-profile-id">
+              </div>
+              <div class="field">
+                <label>schedule-id</label>
+                <input type="text" value="sch-001" data-field="schedule-id">
+              </div>
+              <div class="field">
+                <label>period-start（留空=立即生效）</label>
+                <input type="text" value="" placeholder="2026-12-15T02:00:00+08:00" data-field="period-start">
+              </div>
+              <div class="field">
+                <label>duration（服务存活时长）</label>
+                <input type="text" value="PT2H" data-field="duration">
+              </div>
+              <div class="field">
+                <label>recurrence（iCalendar 规则）</label>
+                <input type="text" value="FREQ=WEEKLY;BYDAY=MO,WE;COUNT=8" data-field="recurrence">
+              </div>
+              <div class="field">
+                <label>actual-start-time（ro）</label>
+                <input type="text" value="—" readonly data-field="actual-start-time">
+              </div>
+              <div class="field">
+                <label>actual-stop-time（ro）</label>
+                <input type="text" value="—" readonly data-field="actual-stop-time">
+              </div>
+            </div>
+          </div>
+
+          <div class="enh-group">
+            <div class="enh-group-title"><span class="tag-ext">增强</span>② dynamic-l3vpn · 动态带宽调整（dynamic-bandwidth-adjustment）<span class="tag-draft">§6.3 · 基线带宽之上临时扩容</span></div>
+            <div class="form-grid">
+              <div class="field">
+                <label>dynamic-type</label>
+                <select data-field="dynamic-type-bw">
+                  <option>dynamic-networking</option>
+                  <option selected>dynamic-bandwidth-adjustment</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>bandwidth-adjustment-profile-id</label>
+                <input type="text" value="bw-max-10g" data-field="bandwidth-adjustment-profile-id">
+              </div>
+              <div class="field">
+                <label>temporary-input-bandwidth</label>
+                <input type="text" value="2000000" data-field="temporary-input-bandwidth">
+              </div>
+              <div class="field">
+                <label>temporary-output-bandwidth</label>
+                <input type="text" value="2000000" data-field="temporary-output-bandwidth">
+              </div>
+              <div class="field">
+                <label>bandwidth-adjustment-schedule</label>
+                <input type="text" value="sch-002 · 2026-09-01T00:00:00Z · PT2H" data-field="bw-schedule">
+              </div>
+            </div>
+          </div>
+
+          <div class="enh-group">
+            <div class="enh-group-title"><span class="tag-ext">增强</span>③ qos 增强 · 网络切片隔离 + 统一流分类<span class="tag-draft">§6.4 · classification-policy 可跨模块复用</span></div>
+            <div class="form-grid">
+              <div class="field">
+                <label>classification-policy rule-id</label>
+                <input type="text" value="rule-1" data-field="rule-id">
+              </div>
+              <div class="field">
+                <label>match dscp</label>
+                <input type="text" value="46" data-field="dscp">
+              </div>
+              <div class="field">
+                <label>match ipv4-src-prefix</label>
+                <input type="text" value="10.1.0.0/16" data-field="ipv4-src-prefix">
+              </div>
+              <div class="field">
+                <label>match l4-src-port</label>
+                <input type="text" value="5000" data-field="l4-src-port">
+              </div>
+              <div class="field">
+                <label>target-class-id（供 qos/security 复用）</label>
+                <input type="text" value="gold" data-field="target-class-id">
+              </div>
+              <div class="field">
+                <label>isolation（网络切片）</label>
+                <select data-field="isolation">
+                  <option selected>isolation-dedicated</option>
+                  <option>isolation-shared</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>latency-boundary（ms）</label>
+                <input type="text" value="50" data-field="latency-boundary">
+              </div>
+              <div class="field">
+                <label>jitter-boundary（ms）</label>
+                <input type="text" value="10" data-field="jitter-boundary">
+              </div>
+            </div>
+          </div>
+
+          <div class="enh-group">
+            <div class="enh-group-title"><span class="tag-ext">增强</span>④ oam / perf-mon · 端到端性能监控<span class="tag-draft">§6.5 · 以目标站点为键上报指标</span></div>
+            <div class="form-grid">
+              <div class="field">
+                <label>perf-mon enable</label>
+                <select data-field="perf-mon-enable">
+                  <option selected>true</option>
+                  <option>false</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>monitor target-site-id</label>
+                <input type="text" value="site-02" data-field="target-site-id">
+              </div>
+              <div class="field">
+                <label>measurement-profile</label>
+                <select data-field="measurement-profile">
+                  <option selected>standard（profile-id）</option>
+                  <option>custom（measurement-interval）</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>profile-id / measurement-interval</label>
+                <input type="text" value="perf-mon-standard-1 / 30s" data-field="measurement-interval">
+              </div>
+              <div class="field">
+                <label>status（ro）</label>
+                <input type="text" value="pm-up" readonly data-field="pm-status">
+              </div>
+              <div class="field">
+                <label>metrics（ro）</label>
+                <input type="text" value="one-way-min-delay / packet-loss …" readonly data-field="pm-metrics">
+              </div>
+            </div>
+          </div>
+
+          <div class="enh-group">
+            <div class="enh-group-title"><span class="tag-ext">增强</span>⑤ security 增强 · 抗量子加密（PQC / QKD）<span class="tag-draft">§6.6 · 按 class-id 细粒度加密</span></div>
+            <div class="form-grid">
+              <div class="field">
+                <label>security class-id</label>
+                <input type="text" value="high-security-flow" data-field="sec-class-id">
+              </div>
+              <div class="field">
+                <label>algorithm（经典加密）</label>
+                <input type="text" value="aes-256-gcm" data-field="sec-algorithm">
+              </div>
+              <div class="field">
+                <label>pqc-only-acceptable</label>
+                <select data-field="pqc-only-acceptable">
+                  <option selected>true</option>
+                  <option>false</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>qkd-only-acceptable</label>
+                <select data-field="qkd-only-acceptable">
+                  <option>true</option>
+                  <option selected>false</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>failure-action</label>
+                <select data-field="failure-action">
+                  <option selected>fallback-classic</option>
+                  <option>block-traffic</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>pqc enable / algorithm</label>
+                <input type="text" value="true · kyber-768" data-field="pqc">
+              </div>
+              <div class="field">
+                <label>qkd enable / key-pool-id</label>
+                <input type="text" value="true · qkd-pool-core-01" data-field="qkd">
+              </div>
+              <div class="field">
+                <label>key-refresh-interval（s）</label>
+                <input type="text" value="3600" data-field="key-refresh-interval">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="seg-foot">经典字段由 pyang 编译 RFC 8299 YANG 树自动生成 · 增强字段来自 ietf-l3vpn-svc-ext（draft-fu-03）· 校验由 yangson 执行 · 模拟引擎：字段变更 → 整批脉冲 + 台账追加 · <span class="mono">[TODO] 真实引擎接入：WebSocket trace 推送</span></div>
+    </section>
+
+    <!-- 段 B · L3NM 网络模型数据 -->
+    <section class="segment" id="seg-b">
+      <header>
+        <span class="seg-title">B · L3NM 网络模型数据（RFC 9182 + ietf-l3vpn-ntw-ext）</span>
+        <span class="view-toggle" data-group="seg-b">
+          <button class="on" data-view="json">JSON</button>
+          <button data-view="tree">tree</button>
+        </span>
+      </header>
+      <details class="model-features" data-features="network">
+        <summary>网络模型特征（YANG 解析）· <span class="feat-count">加载中…</span></summary>
+        <div class="feature-tree"></div>
+      </details>
+      <div class="sub-tabs" data-group="seg-b">
+        <button class="on" data-part="classic">经典内容<span class="cnt">RFC 9182</span></button>
+        <button data-part="enhanced">增强内容<span class="cnt">draft-huang-00</span></button>
+      </div>
+      <div class="seg-body">
+
+        <!-- ===== 经典内容 · RFC 9182 基础数据 ===== -->
+        <div class="part-pane" data-part-pane="classic">
+          <div class="part-title">经典内容 · RFC 9182 基础数据 <span class="src">（网络侧视图 · vpn-node / vpn-network-access）</span></div>
+          <div class="code-view" data-view-pane="json">
+            <div class="code-line"><span class="ln">1</span><span class="k">"ietf-l3vpn-ntw:l3vpn-ntw"</span>: {</div>
+            <div class="code-line"><span class="ln">2</span>  <span class="k">"vpn-services"</span>: {</div>
+            <div class="code-line"><span class="ln">3</span>    <span class="k">"vpn-service"</span>: [</div>
+            <div class="code-line"><span class="ln">4</span>      {</div>
+            <div class="code-line hl-orange" data-field="vpn-id-b"><span class="ln">5</span>        <span class="k">"vpn-id"</span>: <span class="s">"VPN-A"</span>,<span class="num-badge" data-rule="rule-vpn-id">1</span></div>
+            <div class="code-line hl-orange" data-field="topology-b"><span class="ln">6</span>        <span class="k">"vpn-service-topology"</span>: <span class="s">"any-to-any"</span>,<span class="num-badge" data-rule="rule-topology">1</span></div>
+            <div class="code-line"><span class="ln">7</span>        <span class="k">"vpn-nodes"</span>: {</div>
+            <div class="code-line"><span class="ln">8</span>          <span class="k">"vpn-node"</span>: [</div>
+            <div class="code-line"><span class="ln">9</span>            {</div>
+            <div class="code-line hl-orange" data-field="vpn-node-id-b"><span class="ln">10</span>              <span class="k">"vpn-node-id"</span>: <span class="s">"VPN-NODE-SITE1-PE1"</span>,<span class="num-badge" data-rule="rule-site-node">2</span></div>
+            <div class="code-line hl-green" data-field="ne-id-b"><span class="ln">11</span>              <span class="k">"ne-id"</span>: <span class="s">"PE1"</span>,<span class="num-badge green" data-rule="rule-pe">2</span></div>
+            <div class="code-line"><span class="ln">12</span>              <span class="k">"active-vpn-instance-profiles"</span>: {</div>
+            <div class="code-line"><span class="ln">13</span>                <span class="k">"vpn-instance-profile"</span>: [</div>
+            <div class="code-line hl-green" data-field="rd-b"><span class="ln">14</span>                  { <span class="k">"rd"</span>: <span class="s">"65100:1001"</span>,<span class="num-badge green" data-rule="rule-rd">2</span></div>
+            <div class="code-line hl-green" data-field="rt-b"><span class="ln">15</span>                    <span class="k">"vpn-targets"</span>: { <span class="k">"route-targets"</span>: <span class="s">"65100:100"</span>, <span class="k">"route-target-type"</span>: <span class="s">"both"</span> } }<span class="num-badge green" data-rule="rule-rt">2</span></div>
+            <div class="code-line"><span class="ln">16</span>                ]</div>
+            <div class="code-line"><span class="ln">17</span>              }</div>
+            <div class="code-line"><span class="ln">18</span>              <span class="k">"vpn-network-accesses"</span>: {</div>
+            <div class="code-line"><span class="ln">19</span>                <span class="k">"vpn-network-access"</span>: [</div>
+            <div class="code-line"><span class="ln">20</span>                  {</div>
+            <div class="code-line"><span class="ln">21</span>                    <span class="k">"id"</span>: <span class="s">"VNA-SITE1-1"</span>,</div>
+            <div class="code-line hl-orange" data-field="ip-conn-b"><span class="ln">22</span>                    <span class="k">"connection"</span>: { <span class="k">"ip-connection"</span>: { <span class="k">"local-address"</span>: <span class="s">"203.0.113.1"</span>, <span class="k">"prefix-length"</span>: <span class="s">30</span> } },<span class="num-badge" data-rule="rule-ip-conn">1</span></div>
+            <div class="code-line hl-orange" data-field="routing-b"><span class="ln">23</span>                    <span class="k">"routing-protocols"</span>: { <span class="k">"routing-protocol"</span>: [ { <span class="k">"type"</span>: <span class="s">"bgp"</span>, <span class="k">"peer-as"</span>: <span class="s">65101</span>, <span class="k">"peer-address"</span>: <span class="s">"203.0.113.2"</span> } ] },<span class="num-badge" data-rule="rule-routing">1</span></div>
+            <div class="code-line hl-orange" data-field="bw-b"><span class="ln">24</span>                    <span class="k">"service"</span>: { <span class="k">"pe-to-ce-bandwidth"</span>: <span class="s">1000000000</span>, <span class="k">"ce-to-pe-bandwidth"</span>: <span class="s">1000000000</span> },<span class="num-badge" data-rule="rule-bw">2</span></div>
+            <div class="code-line hl-orange" data-field="qos-b"><span class="ln">25</span>                    <span class="k">"qos"</span>: { <span class="k">"qos-profile"</span>: <span class="s">"gold"</span> },<span class="num-badge" data-rule="rule-qos">1</span></div>
+            <div class="code-line hl-orange" data-field="mtu-b"><span class="ln">26</span>                    <span class="k">"mtu"</span>: <span class="s">1500</span><span class="num-badge" data-rule="rule-mtu">1</span></div>
+            <div class="code-line"><span class="ln">27</span>                  }</div>
+            <div class="code-line"><span class="ln">28</span>                ]</div>
+            <div class="code-line"><span class="ln">29</span>              }</div>
+            <div class="code-line"><span class="ln">30</span>            }</div>
+            <div class="code-line"><span class="ln">31</span>          ]</div>
+            <div class="code-line"><span class="ln">32</span>        }</div>
+            <div class="code-line"><span class="ln">33</span>      }</div>
+            <div class="code-line"><span class="ln">34</span>    ]</div>
+            <div class="code-line"><span class="ln">35</span>  }</div>
+            <div class="code-line"><span class="ln">36</span>}</div>
+          </div>
+          <div class="tree-view" data-view-pane="tree" hidden>
+            <div>l3vpn-ntw</div>
+            <div>&nbsp;&nbsp;└─ vpn-services (list)</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ vpn-service</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">vpn-id</span> <span class="t-leaf">string</span> <span class="t-mark">= "VPN-A"</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">vpn-service-topology</span> <span class="t-leaf">identityref</span> <span class="t-mark">= any-to-any</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ vpn-nodes (list)</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ vpn-node</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">vpn-node-id</span> <span class="t-leaf">string</span> <span class="t-mark">= "VPN-NODE-SITE1-PE1"</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">ne-id</span> <span class="t-leaf">string</span> <span class="t-mark">= "PE1"</span> <span class="t-mark">← DERIVE</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ active-vpn-instance-profiles / vpn-instance-profile</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ <span class="t-node">rd</span> <span class="t-mark">= "65100:1001"</span> <span class="t-mark">← DERIVE</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;└─ <span class="t-node">vpn-targets</span> <span class="t-mark">= 65100:100 (both)</span> <span class="t-mark">← DERIVE</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ vpn-network-accesses / vpn-network-access</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">id</span> <span class="t-leaf">string</span> <span class="t-mark">= "VNA-SITE1-1"</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">connection / ip-connection</span> <span class="t-mark">= 203.0.113.1/30</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">routing-protocols</span> <span class="t-mark">= bgp 65101 → 203.0.113.2</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">service</span> <span class="t-mark">= pe-to-ce 1G / ce-to-pe 1G</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">qos</span> <span class="t-mark">= "gold"</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <span class="t-node">mtu</span> <span class="t-leaf">uint16</span> <span class="t-mark">= 1500</span></div>
+          </div>
+        </div>
+
+        <!-- ===== 增强内容 · ietf-l3vpn-ntw-ext（draft-huang-onsen-update-l3nm-network-models-00） ===== -->
+        <div class="part-pane" data-part-pane="enhanced" hidden>
+          <div class="part-title">增强内容 · ietf-l3vpn-ntw-ext <span class="src">（draft-huang-onsen-update-l3nm-network-models-00 · 镜像 L3SM 增强能力）</span></div>
+          <div class="code-view" data-view-pane="json">
+            <div class="code-line"><span class="ln">1</span><span class="k">"ietf-l3vpn-ntw:l3vpn-ntw"</span>: {</div>
+            <div class="code-line"><span class="ln">2</span>  <span class="k">"vpn-services"</span>: {</div>
+            <div class="code-line"><span class="ln">3</span>    <span class="k">"vpn-service"</span>: [</div>
+            <div class="code-line"><span class="ln">4</span>      {</div>
+            <div class="code-line"><span class="ln">5</span>        <span class="k">"vpn-id"</span>: <span class="s">"VRF-DATA-TRANSFER"</span>,</div>
+            <div class="code-line"><span class="ln">6</span>        <span class="k">"vpn-nodes"</span>: {</div>
+            <div class="code-line"><span class="ln">7</span>          <span class="k">"vpn-node"</span>: [</div>
+            <div class="code-line"><span class="ln">8</span>            {</div>
+            <div class="code-line"><span class="ln">9</span>              <span class="k">"vpn-node-id"</span>: <span class="s">"PE1-SITE1"</span>,</div>
+            <div class="code-line hl-green" data-field="perf-mon"><span class="ln">10</span>              <span class="k">"ietf-l3vpn-ntw-ext:perf-mon"</span>: { <span class="k">"enable"</span>: <span class="s">true</span>,</div>
+            <div class="code-line"><span class="ln">11</span>                <span class="k">"monitoring"</span>: { <span class="k">"monitor"</span>: [ { <span class="k">"target-vpn-node-id"</span>: <span class="s">"PE-HUB"</span>,</div>
+            <div class="code-line"><span class="ln">12</span>                  <span class="k">"measurement-profile"</span>: { <span class="k">"measurement-interval"</span>: <span class="s">60</span> } } ] } },</div>
+            <div class="code-line"><span class="ln">13</span>              <span class="k">"vpn-network-accesses"</span>: {</div>
+            <div class="code-line"><span class="ln">14</span>                <span class="k">"vpn-network-access"</span>: [</div>
+            <div class="code-line"><span class="ln">15</span>                  {</div>
+            <div class="code-line"><span class="ln">16</span>                    <span class="k">"id"</span>: <span class="s">"eth1"</span>,</div>
+            <div class="code-line hl-orange" data-field="bw-b"><span class="ln">17</span>                    <span class="k">"service"</span>: { <span class="k">"pe-to-ce-bandwidth"</span>: <span class="s">1000000000</span>, <span class="k">"ce-to-pe-bandwidth"</span>: <span class="s">1000000000</span>,<span class="num-badge" data-rule="rule-bw">2</span></div>
+            <div class="code-line hl-orange" data-field="dynamic-l3vpn"><span class="ln">18</span>                      <span class="k">"ietf-l3vpn-ntw-ext:dynamic-l3vpn"</span>: {</div>
+            <div class="code-line"><span class="ln">19</span>                        <span class="k">"provisioning-delay-profile-id"</span>: <span class="s">"delay-gold"</span>,</div>
+            <div class="code-line"><span class="ln">20</span>                        <span class="k">"networking-schedule"</span>: { <span class="k">"schedule"</span>: [</div>
+            <div class="code-line"><span class="ln">21</span>                          { <span class="k">"schedule-id"</span>: <span class="s">"workday-9-18"</span>, <span class="k">"recurrence"</span>: { <span class="k">"frequency"</span>: <span class="s">"ietf-schedule:daily"</span>, <span class="k">"interval"</span>: <span class="s">1</span> } }</div>
+            <div class="code-line"><span class="ln">22</span>                        ] } } },</div>
+            <div class="code-line hl-orange" data-field="sec-class"><span class="ln">23</span>                    <span class="k">"ietf-l3vpn-ntw-ext:security"</span>: { <span class="k">"classes"</span>: { <span class="k">"class"</span>: [</div>
+            <div class="code-line"><span class="ln">24</span>                      { <span class="k">"class-id"</span>: <span class="s">"gold"</span>, <span class="k">"post-quantum-encryption"</span>: {</div>
+            <div class="code-line"><span class="ln">25</span>                        <span class="k">"post-quantum-policy"</span>: { <span class="k">"pqc-only-acceptable"</span>: <span class="s">true</span>, <span class="k">"qkd-only-acceptable"</span>: <span class="s">true</span>,</div>
+            <div class="code-line"><span class="ln">26</span>                          <span class="k">"failure-action"</span>: <span class="s">"ietf-l3vpn-ntw-ext:failure-fallback-conventional"</span> },</div>
+            <div class="code-line"><span class="ln">27</span>                        <span class="k">"pqc"</span>: { <span class="k">"enable"</span>: <span class="s">true</span>, <span class="k">"algorithm"</span>: <span class="s">"ML-KEM-1024"</span> },</div>
+            <div class="code-line"><span class="ln">28</span>                        <span class="k">"qkd"</span>: { <span class="k">"enable"</span>: <span class="s">true</span>, <span class="k">"qkd-key-pool-id"</span>: <span class="s">"pool-pe1-pe2"</span>, <span class="k">"key-refresh-interval"</span>: <span class="s">3600</span> }</div>
+            <div class="code-line"><span class="ln">29</span>                      } } ] } }</div>
+            <div class="code-line"><span class="ln">30</span>                  }</div>
+            <div class="code-line"><span class="ln">31</span>                ]</div>
+            <div class="code-line"><span class="ln">32</span>              }</div>
+            <div class="code-line"><span class="ln">33</span>            }</div>
+            <div class="code-line"><span class="ln">34</span>          ]</div>
+            <div class="code-line"><span class="ln">35</span>        }</div>
+            <div class="code-line"><span class="ln">36</span>      }</div>
+            <div class="code-line"><span class="ln">37</span>    ]</div>
+            <div class="code-line"><span class="ln">38</span>  }</div>
+            <div class="code-line"><span class="ln">39</span>}</div>
+          </div>
+          <div class="tree-view" data-view-pane="tree" hidden>
+            <div>l3vpn-ntw</div>
+            <div>&nbsp;&nbsp;└─ vpn-services / vpn-service / vpn-nodes / vpn-node</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">vpn-node-id</span> <span class="t-mark">= "PE1-SITE1"</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">perf-mon</span> <span class="t-mark">{perf-mon}? ← 增强</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ <span class="t-node">enable</span> <span class="t-leaf">boolean</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;└─ monitoring / monitor* [target-vpn-node-id]</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ measurement-profile (standard / custom)</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <span class="t-node">metrics</span> (ro: delay / jitter / loss)</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ classification-policy* [rule-id] <span class="t-mark">← 增强（统一流分类）</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ vpn-network-accesses / vpn-network-access</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ service</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ <span class="t-node">pe-to-ce-bandwidth</span> / <span class="t-node">ce-to-pe-bandwidth</span> <span class="t-leaf">uint64</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;└─ <span class="t-node">dynamic-l3vpn</span> <span class="t-mark">{dynamic-l3vpn}? ← 增强</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ (dynamic-networking): provisioning-delay-profile-id + networking-schedule</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ (dynamic-bandwidth-adjustment): temporary-pe/ce-to-ce bandwidth + schedule</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ qos / qos-action / rule: <span class="t-node">isolation*</span> <span class="t-mark">← 增强（网络切片）</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ security / <span class="t-node">classes / class* [class-id]</span> <span class="t-mark">← 增强（PQC/QKD）</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ post-quantum-encryption: policy + pqc + qkd</div>
+          </div>
+        </div>
+      </div>
+      <div class="seg-foot">经典数据来自 RFC 9182 · 增强数据来自 ietf-l3vpn-ntw-ext（draft-huang-00，与 L3SM 增强一一对应）· 双视图：JSON 实例 / YANG tree · 编号可反查 · 模拟引擎：整批脉冲 + 因果编号 · <span class="mono">[TODO] 真实引擎接入：WebSocket trace 推送</span></div>
+    </section>
+
+    <!-- 段 C · 设备模型参数 -->
+    <section class="segment" id="seg-c">
+      <header>
+        <span class="seg-title">C · 设备模型参数（OpenConfig）</span>
+        <span class="view-toggle" data-group="seg-c">
+          <button class="on" data-view="json">JSON</button>
+          <button data-view="tree">tree</button>
+        </span>
+      </header>
+      <details class="model-features" data-features="device">
+        <summary>设备模型特征（YANG 解析）· <span class="feat-count">加载中…</span></summary>
+        <div class="feature-tree"></div>
+      </details>
+      <div class="device-tabs" id="deviceTabs">
+        <button class="on" data-device="pe1">pe1 <span class="dot-badge">1</span></button>
+        <button data-device="pe2">pe2 <span class="dot-badge">1</span></button>
+        <button data-device="pe3">pe3</button>
+      </div>
+      <div class="device-pane" data-device-pane="pe1">
+        <div class="code-view" data-view-pane="json">
+          <div class="code-line"><span class="ln">1</span><span class="k">"network-instances"</span>: {</div>
+          <div class="code-line"><span class="ln">2</span>  <span class="k">"network-instance"</span>: [</div>
+          <div class="code-line hl-orange" data-field="ni-pe1"><span class="ln">3</span>    { <span class="k">"name"</span>: <span class="s">"VPN-A"</span>, <span class="k">"type"</span>: <span class="s">"l3vrf"</span>, <span class="k">"rd"</span>: <span class="s">"65100:1001"</span>,<span class="num-badge" data-rule="rule-vrf">1</span></div>
+          <div class="code-line hl-green" data-field="rt-c-pe1"><span class="ln">4</span>      <span class="k">"route-targets"</span>: [ { <span class="k">"rt"</span>: <span class="s">"65100:100"</span>, <span class="k">"type"</span>: <span class="s">"both"</span> } ],<span class="num-badge green" data-rule="rule-rt">2</span></div>
+          <div class="code-line hl-orange" data-field="iface-pe1"><span class="ln">5</span>      <span class="k">"interfaces"</span>: [ { <span class="k">"name"</span>: <span class="s">"GE0/0/1.100"</span>, <span class="k">"type"</span>: <span class="s">"l3vlan"</span>, <span class="k">"vrf"</span>: <span class="s">"VPN-A"</span>,<span class="num-badge" data-rule="rule-iface">1</span></div>
+          <div class="code-line hl-orange" data-field="ip-c-pe1"><span class="ln">6</span>        <span class="k">"ipv4"</span>: { <span class="k">"address"</span>: [ { <span class="k">"ip"</span>: <span class="s">"203.0.113.1"</span>, <span class="k">"prefix-length"</span>: <span class="s">30</span> } ] } },<span class="num-badge" data-rule="rule-ip">1</span></div>
+          <div class="code-line hl-orange" data-field="bgp-pe1"><span class="ln">7</span>      <span class="k">"protocols"</span>: [ { <span class="k">"bgp"</span>: { <span class="k">"neighbor"</span>: [ { <span class="k">"remote-address"</span>: <span class="s">"203.0.113.2"</span>, <span class="k">"peer-as"</span>: <span class="s">65101</span> } ] } } ] }<span class="num-badge" data-rule="rule-bgp">1</span></div>
+          <div class="code-line"><span class="ln">8</span>  ]</div>
+          <div class="code-line"><span class="ln">9</span>}</div>
+        </div>
+        <div class="tree-view" data-view-pane="tree" hidden>
+          <div>network-instances</div>
+          <div>&nbsp;&nbsp;└─ network-instance (list)</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">name</span> <span class="t-leaf">string</span> <span class="t-mark">= "VPN-A"</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">type</span> <span class="t-leaf">identityref</span> <span class="t-mark">= l3vrf</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">rd</span> <span class="t-leaf">string</span> <span class="t-mark">= "65100:1001"</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">route-targets</span> <span class="t-mark">= 65100:100 (both)</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">interfaces</span> <span class="t-mark">= GE0/0/1.100 (203.0.113.1/30)</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <span class="t-node">protocols</span> <span class="t-mark">= BGP nbr 203.0.113.2</span></div>
+        </div>
+      </div>
+      <div class="device-pane" data-device-pane="pe2" hidden>
+        <div class="code-view" data-view-pane="json">
+          <div class="code-line"><span class="ln">1</span><span class="k">"network-instances"</span>: {</div>
+          <div class="code-line"><span class="ln">2</span>  <span class="k">"network-instance"</span>: [</div>
+          <div class="code-line hl-orange" data-field="ni-pe2"><span class="ln">3</span>    { <span class="k">"name"</span>: <span class="s">"VPN-A"</span>, <span class="k">"type"</span>: <span class="s">"l3vrf"</span>, <span class="k">"rd"</span>: <span class="s">"65100:1002"</span>,<span class="num-badge" data-rule="rule-vrf">1</span></div>
+          <div class="code-line hl-green" data-field="rt-c-pe2"><span class="ln">4</span>      <span class="k">"route-targets"</span>: [ { <span class="k">"rt"</span>: <span class="s">"65100:100"</span>, <span class="k">"type"</span>: <span class="s">"both"</span> } ],<span class="num-badge green" data-rule="rule-rt">2</span></div>
+          <div class="code-line hl-orange" data-field="iface-pe2"><span class="ln">5</span>      <span class="k">"interfaces"</span>: [ { <span class="k">"name"</span>: <span class="s">"GE0/0/2.100"</span>, <span class="k">"type"</span>: <span class="s">"l3vlan"</span>, <span class="k">"vrf"</span>: <span class="s">"VPN-A"</span>,<span class="num-badge" data-rule="rule-iface">1</span></div>
+          <div class="code-line hl-orange" data-field="ip-c-pe2"><span class="ln">6</span>        <span class="k">"ipv4"</span>: { <span class="k">"address"</span>: [ { <span class="k">"ip"</span>: <span class="s">"203.0.114.1"</span>, <span class="k">"prefix-length"</span>: <span class="s">30</span> } ] } },<span class="num-badge" data-rule="rule-ip">1</span></div>
+          <div class="code-line hl-orange" data-field="static-pe2"><span class="ln">7</span>      <span class="k">"protocols"</span>: [ { <span class="k">"static"</span>: { <span class="k">"route"</span>: [ { <span class="k">"prefix"</span>: <span class="s">"198.51.100.0/24"</span>, <span class="k">"next-hop"</span>: <span class="s">"203.0.114.2"</span> } ] } } ] }<span class="num-badge" data-rule="rule-static">1</span></div>
+          <div class="code-line"><span class="ln">8</span>  ]</div>
+          <div class="code-line"><span class="ln">9</span>}</div>
+        </div>
+        <div class="tree-view" data-view-pane="tree" hidden>
+          <div>network-instances</div>
+          <div>&nbsp;&nbsp;└─ network-instance (list)</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">name</span> <span class="t-leaf">string</span> <span class="t-mark">= "VPN-A"</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">type</span> <span class="t-leaf">identityref</span> <span class="t-mark">= l3vrf</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">rd</span> <span class="t-leaf">string</span> <span class="t-mark">= "65100:1002"</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">route-targets</span> <span class="t-mark">= 65100:100 (both)</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">interfaces</span> <span class="t-mark">= GE0/0/2.100 (203.0.114.1/30)</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <span class="t-node">protocols</span> <span class="t-mark">= static 198.51.100.0/24 → 203.0.114.2</span></div>
+        </div>
+      </div>
+      <div class="device-pane" data-device-pane="pe3" hidden>
+        <div class="code-view" data-view-pane="json">
+          <div class="code-line"><span class="ln">1</span><span class="k">"network-instances"</span>: {</div>
+          <div class="code-line"><span class="ln">2</span>  <span class="k">"network-instance"</span>: [</div>
+          <div class="code-line hl-orange" data-field="ni-pe3"><span class="ln">3</span>    { <span class="k">"name"</span>: <span class="s">"VPN-A"</span>, <span class="k">"type"</span>: <span class="s">"l3vrf"</span>, <span class="k">"rd"</span>: <span class="s">"65100:1003"</span>,<span class="num-badge" data-rule="rule-vrf">1</span></div>
+          <div class="code-line hl-orange" data-field="iface-pe3"><span class="ln">4</span>      <span class="k">"interfaces"</span>: [ <span class="s">"ethernet-1/3"</span> ],</div>
+          <div class="code-line"><span class="ln">5</span>      <span class="k">"protocols"</span>: [ <span class="s">"BGP"</span> ] }</div>
+          <div class="code-line"><span class="ln">6</span>  ]</div>
+          <div class="code-line"><span class="ln">7</span>}</div>
+        </div>
+        <div class="tree-view" data-view-pane="tree" hidden>
+          <div>network-instances</div>
+          <div>&nbsp;&nbsp;└─ network-instance (list)</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">name</span> <span class="t-leaf">string</span> <span class="t-mark">= "VPN-A"</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="t-node">rd</span> <span class="t-leaf">string</span> <span class="t-mark">= "65100:1003"</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ ...</div>
+        </div>
+      </div>
+      <div class="seg-foot">同样自动跳转 + 高亮 · 按 PE 分设备多份（SPLIT 展开示例：pe1/pe2/pe3 选项卡）· 模拟引擎：SPLIT 分发 + 未读角标 · <span class="mono">[TODO] 真实引擎接入：SPLIT 分发 + 未读角标</span></div>
+    </section>
+  </main>
+
+  <!-- ========== 右栏 · 双映射面板 ========== -->
+  <aside class="right-col">
+
+    <!-- 映射关系定义（研究人员扩展入口） -->
+    <div class="mapping-define">
+      <header>
+        <div class="mp-title">映射关系定义（研究人员）</div>
+        <div class="mp-draft">跨层级：业务 → 网络 → 设备</div>
+      </header>
+      <div class="md-tabs">
+        <button class="on" data-md="text">draft 文本</button>
+        <button data-md="table">表格</button>
+      </div>
+      <div class="md-pane" data-md-pane="text">
+        <textarea class="md-text" placeholder="每行一条映射规则：
+[R7.1-01:] l3sm:vpn-services/vpn-service/vpn-id -> l3nm:vpn-services/vpn-service/vpn-id (COPY) # 说明
+l3sm:vpn-services/vpn-service/vpn-name -> - (DROP)
+l3sm:vpn-services/vpn-service/research/sla-tier -> l3nm:vpn-services/vpn-service/research/sla-tier (COPY)
+
+支持操作: COPY / DROP / DERIVE
+路径格式: l3sm:... / l3nm:...（augment 容器需带模块前缀，如 ietf-l3vpn-svc-research-ext:research）"></textarea>
+      </div>
+      <div class="md-pane" data-md-pane="table" hidden>
+        <table class="md-table">
+          <thead>
+            <tr><th>ID</th><th>源字段</th><th>目标字段</th><th>操作</th><th>说明</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <button class="md-add-row">+ 添加行</button>
+      </div>
+      <div class="md-actions">
+        <button class="md-submit">提交映射定义</button>
+        <span class="md-result"></span>
+      </div>
+    </div>
+
+    <!-- 映射关系总表入口（右上角） -->
+    <a class="map-table-link" href="#mapTableEmbed" id="mapTableLink">映射关系总表（增强 L3SM → 增强 L3NM → 设备）▾ 展开</a>
+
+    <!-- 面板一：L3SM → L3NM -->
+    <div class="mapping-panel">
+      <header>
+        <div class="mp-title">L3SM → L3NM 映射</div>
+        <div class="mp-draft">draft-huang-onsen-l3vpn-model-mapping-01 · §5</div>
+      </header>
+      <div class="rule-list">
+        <div class="rule-row copy" id="rule-vpn-id" data-field="vpn-id-b" data-src="vpn-id">
+          <div class="r-name">vpn-id → vpn-id</div>
+          <div class="r-meta">COPY · §5.1 · 全链路关联键</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-topology" data-field="topology-b" data-src="topology">
+          <div class="r-name">vpn-service-topology → vpn-service-topology</div>
+          <div class="r-meta">COPY · §5.1 · RT 构造见 §5.4</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row plain" id="rule-customer-name" data-src="customer">
+          <div class="r-name">customer-name → —（无对应）</div>
+          <div class="r-meta">N · §5.1 · 良性丢弃，OSS 按 vpn-id 关联</div>
+        </div>
+        <div class="rule-row derive" id="rule-site-node" data-field="vpn-node-id-b" data-src="site-id">
+          <div class="r-name">site-id → vpn-node-id（并入命名方案）</div>
+          <div class="r-meta">DERIVE · §5.2 · 站点→PE 非一对一</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row copy" id="rule-diversity" data-field="vpn-node-id-b">
+          <div class="r-name">site-diversity/diversity-groups → group-ids</div>
+          <div class="r-meta">COPY · §5.2 · 干净的直接映射</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row derive" id="rule-sna-id" data-field="vpn-node-id-b">
+          <div class="r-name">site-network-access-id → id（命名方案内）</div>
+          <div class="r-meta">DERIVE · §5.3</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row copy" id="rule-ip-conn" data-field="ip-conn-b" data-src="ip-connection">
+          <div class="r-name">ip-connection/addresses → connection/ip-connection</div>
+          <div class="r-meta">COPY · §5.3 · 客户/运营商地址</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-routing" data-field="routing-b" data-src="routing-protocols">
+          <div class="r-name">routing-protocols → routing-protocols（per-access）</div>
+          <div class="r-meta">COPY · §5.3 · bgp/ospf/static/direct</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row derive" id="rule-bw" data-field="bw-b" data-src="svc-input-bandwidth">
+          <div class="r-name">svc-input/output-bandwidth → qos 带宽</div>
+          <div class="r-meta">DERIVE · §5.3 · 方向互换 input→ce-to-pe</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row copy" id="rule-mtu" data-field="mtu-b">
+          <div class="r-name">service/mtu → connection/mtu</div>
+          <div class="r-meta">COPY · §5.3 · 下钻校验点</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row derive" id="rule-rd" data-field="rd-b">
+          <div class="r-name">∅ → route-distinguisher</div>
+          <div class="r-meta">DERIVE · §5.4 · 按 vpn-node 分配（Gap G1）</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row derive" id="rule-rt" data-field="rt-b" data-src="topology">
+          <div class="r-name">∅ → route-targets（拓扑→RT 计划）</div>
+          <div class="r-meta">DERIVE · §5.4 · any-to-any 单 RT / hub-spoke 双 RT</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row derive" id="rule-pe" data-field="ne-id-b">
+          <div class="r-name">∅ → ne-id（PE 选择）</div>
+          <div class="r-meta">DERIVE · §5.4 · 位置/承载/容量/多样性</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row copy" id="rule-dyn" data-field="dynamic-l3vpn" data-src="dynamic-type">
+          <div class="r-name">dynamic-l3vpn（组网/带宽）→ dynamic-l3vpn</div>
+          <div class="r-meta">COPY · §5.5 · 方向互换 + schedule 原样</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-class" data-field="sec-class" data-src="target-class-id">
+          <div class="r-name">classification-policy site → vpn-node 展开</div>
+          <div class="r-meta">D/R · §5.5 · target-sites 展开为 vpn-node 规则</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row derive" id="rule-perfmon" data-field="perf-mon" data-src="target-site-id">
+          <div class="r-name">perf-mon target-site-id → target-vpn-node-id</div>
+          <div class="r-meta">D/R · §5.5 · 站点→服务节点解析</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row copy" id="rule-sec" data-field="sec-class" data-src="sec-class-id">
+          <div class="r-name">security classes → classes（class-id 一致）</div>
+          <div class="r-meta">COPY · §5.5 · PQC/QKD 子树原样</div>
+          <span class="num-badge">1</span>
+        </div>
+      </div>
+      <div class="mp-foot">点击行 = 反查中栏源/目标字段 · 精选 17 条（完整表见项目仓库）</div>
+    </div>
+
+    <!-- 面板二：L3NM → 设备模型 -->
+    <div class="mapping-panel">
+      <header>
+        <div class="mp-title">L3NM → 设备模型映射</div>
+        <div class="mp-draft">draft-huang-onsen-l3vpn-model-mapping-01 · §6</div>
+      </header>
+      <div class="rule-list">
+        <div class="rule-row copy" id="rule-vrf" data-field="ni-pe1">
+          <div class="r-name">vpn-node + instance-profiles → ietf-vrf VRF（RD/RT）</div>
+          <div class="r-meta">COPY · §6 · RFC 8529 · 最成熟环节</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-iface" data-field="iface-pe1">
+          <div class="r-name">vpn-network-access/connection → ietf-interfaces 子接口</div>
+          <div class="r-meta">COPY · §6 · RFC 8343 · 绑定 VRF</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-ip" data-field="ip-c-pe1">
+          <div class="r-name">connection/ip-connection → ietf-ip 地址</div>
+          <div class="r-meta">COPY · §6 · RFC 8344</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-bgp" data-field="bgp-pe1">
+          <div class="r-name">routing-protocols/bgp → ietf-bgp VRF 邻居</div>
+          <div class="r-meta">COPY · §6 · Gap G5（模型在研）</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-ospf" data-field="bgp-pe1">
+          <div class="r-name">routing-protocols/ospf → ietf-ospf</div>
+          <div class="r-meta">COPY · §6 · RFC 9129</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-static" data-field="static-pe2">
+          <div class="r-name">routing-protocols/static → ietf-routing 静态路由</div>
+          <div class="r-meta">COPY · §6 · RFC 8349</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row copy" id="rule-policy" data-field="bgp-pe1">
+          <div class="r-name">export/import policy → ietf-routing-policy</div>
+          <div class="r-meta">COPY · §6 · RFC 9067</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row plain" id="rule-qos" data-field="qos-b">
+          <div class="r-name">qos profiles → —（无标准设备模型）</div>
+          <div class="r-meta">N · §6 · Gap G4 · 厂商私有</div>
+        </div>
+        <div class="rule-row derive" id="rule-transport" data-field="bgp-pe1">
+          <div class="r-name">underlay transport binding → SR Policy + BGP steering</div>
+          <div class="r-meta">DERIVE · §6 · Gap G6（模型在研）</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row plain" id="rule-sched" data-field="dynamic-l3vpn">
+          <div class="r-name">networking/bandwidth schedule → —（控制器调度）</div>
+          <div class="r-meta">N · §6 · Gap G8 · 控制器充当调度器</div>
+        </div>
+        <div class="rule-row copy" id="rule-acl" data-field="sec-class">
+          <div class="r-name">classification-policy match-flow → ietf-acl ACEs</div>
+          <div class="r-meta">COPY · §6 · RFC 8519 · 继承规则顺序</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row derive" id="rule-isolation" data-field="sec-class" data-src="isolation">
+          <div class="r-name">qos-action isolation → Slice/NRP 绑定</div>
+          <div class="r-meta">DERIVE · §6 · SR Policy + 队列分区</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row copy" id="rule-stamp" data-field="perf-mon">
+          <div class="r-name">perf-mon → STAMP 会话 + YANG-Push 上报</div>
+          <div class="r-meta">D/R · §6 · 唯一部分标准化路径</div>
+          <span class="num-badge">1</span>
+        </div>
+        <div class="rule-row derive" id="rule-ipsec" data-field="sec-class">
+          <div class="r-name">security classes → IPsec/IKE 设备模型</div>
+          <div class="r-meta">DERIVE · §6 · RFC 9370 多密钥交换</div>
+          <span class="num-badge green">2</span>
+        </div>
+        <div class="rule-row plain" id="rule-pqc" data-field="sec-class">
+          <div class="r-name">post-quantum-encryption → —（无标准模型）</div>
+          <div class="r-meta">N · §6 · Gap G9 · QKD 接口为 ETSI REST</div>
+        </div>
+      </div>
+      <div class="mp-foot">点击行 = 反查中栏源/目标字段 · 精选 15 条（完整表见项目仓库）</div>
+    </div>
+  </aside>
+</div>
+
+<!-- ===== 图例 ===== -->
+<div class="legend">
+  <span class="lg"><span class="sw orange"></span>橙 = 本批变更（COPY ①）</span>
+  <span class="lg"><span class="sw green"></span>绿 = DERIVE 生成（②）</span>
+  <span class="lg"><span class="sw dash"></span>③ = SPLIT 多设备分发（pe1/pe2/pe3）</span>
+  <span class="lg">跟随模式 ON：变更自动跳转 + 整批脉冲</span>
+  <span class="lg" style="margin-left:auto">规则行 / 编号徽标可点击反查（双向）</span>
+</div>
+
+<!-- ===== 变更台账 ===== -->
+<div class="ledger" id="ledger">
+  <button class="ledger-toggle" id="ledgerToggle">
+    <span class="arrow">▾</span> 变更台账（本会话 <span id="ledgerCount">6</span> 条 · 可回放核对）
+    <span style="margin-left:auto;font-size:11px;color:var(--gray);font-weight:400">模拟引擎实时追加 · [TODO] 真实引擎接入</span>
+  </button>
+  <div class="ledger-body">
+    <table>
+      <thead><tr><th>时间</th><th>字段</th><th>值</th><th>批次</th><th>编号</th><th>规则出处</th></tr></thead>
+      <tbody>
+        <tr><td>14:32:05.118</td><td class="mono">vpn-id</td><td class="mono">VPN-A</td><td><span class="tag batch">批 #7</span></td><td>①</td><td class="mono">§5.1 vpn-id → vpn-id</td></tr>
+        <tr><td>14:32:05.121</td><td class="mono">vpn-service-topology</td><td class="mono">any-to-any</td><td><span class="tag batch">批 #7</span></td><td>①</td><td class="mono">§5.1 topology → topology</td></tr>
+        <tr><td>14:32:05.134</td><td class="mono">route-distinguisher</td><td class="mono">65100:1001</td><td><span class="tag derive">DERIVE</span></td><td>②</td><td class="mono">§5.4 ∅ → RD（Gap G1）</td></tr>
+        <tr><td>14:32:05.140</td><td class="mono">route-targets</td><td class="mono">65100:100（both）</td><td><span class="tag derive">DERIVE</span></td><td>②</td><td class="mono">§5.4 拓扑→RT 计划</td></tr>
+        <tr><td>14:32:05.142</td><td class="mono">network-instance.name</td><td class="mono">VPN-A</td><td><span class="tag batch">批 #7</span></td><td>①</td><td class="mono">§6 vpn-node → ietf-vrf</td></tr>
+        <tr><td>14:32:05.150</td><td class="mono">interface（pe1/pe2/pe3）</td><td class="mono">GE0/0/1.100..3.100</td><td><span class="tag batch">批 #7</span></td><td>③</td><td class="mono">SPLIT · §6 按设备分发</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== 内嵌映射关系总表（单文件自包含，替代独立页面） ===== -->
+<details class="map-table-embed" id="mapTableEmbed">
+  <summary>
+    <span class="arrow">▾</span> 映射关系总表（增强 L3SM → 增强 L3NM → 设备模型）
+    <span class="mt-hint">draft-huang-onsen-l3vpn-model-mapping-01 · §5.5 + §6 · 点击展开/收起</span>
+  </summary>
+  <div class="mt-inner">
+
+    <div class="mt-note">
+      <span class="src">来源：draft-huang-onsen-l3vpn-model-mapping-01</span>
+      <span>§5.5 增强 L3SM→L3NM 扩展映射 · §6 L3NM→设备模型落点</span>
+      <span>模块：ietf-l3vpn-svc-dynamic-ext（draft-fu-03）↔ ietf-l3vpn-ntw-ext（draft-huang-00）</span>
+    </div>
+
+    <div class="mt-legend">
+      <span class="lg"><span class="type-tag type-d">D</span>直接映射（COPY，语义等价）</span>
+      <span class="lg"><span class="type-tag type-r">R</span>派生（DERIVE，需编排器/控制器计算分配）</span>
+      <span class="lg"><span class="type-tag type-n">N</span>无对应（丢弃或留在上层系统）</span>
+      <span class="lg"><span class="type-tag type-dr">D/R</span>混合（部分直接、部分派生）</span>
+      <span class="lg"><span class="type-tag type-d">D(*)</span>直接但有前提（按角色/需先注册）</span>
+    </div>
+
+    <!-- ===== 表 1：增强 L3SM → 增强 L3NM ===== -->
+    <div class="mt-section">
+      <div class="mt-section-title">
+        <span class="tag-ext">增强</span>表 1 · 增强 L3SM → 增强 L3NM 映射
+        <span class="sec-src">draft-huang-onsen-l3vpn-model-mapping-01 §5.5</span>
+      </div>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:34%">增强 L3SM 节点<br><span style="font-weight:400;font-size:10.5px">ietf-l3vpn-svc-dynamic-ext</span></th>
+              <th style="width:34%">增强 L3NM 节点<br><span style="font-weight:400;font-size:10.5px">ietf-l3vpn-ntw-ext</span></th>
+              <th style="width:7%">类型</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">vpn-profiles / valid-provider-identifiers<br><span class="sub">bandwidth-adjustment、provisioning-latency、perf-mon profile 标识</span></td>
+              <td class="mono">vpn-profiles / valid-provider-identifiers<br><span class="sub">bandwidth-adjustment、provisioning-delay、perf-mon profile 标识</span></td>
+              <td><span class="type-tag type-d">D(*)</span></td>
+              <td>按角色映射而非按名称：服务层 provisioning-latency ↔ 网络层 provisioning-delay，语义一致、名称略异；未来修订对齐名称即可变为名称保持映射。</td>
+            </tr>
+            <tr>
+              <td class="mono">service / dynamic-l3vpn<br><span class="sub">case dynamic-networking：provisioning-delay-profile-id、networking-schedule（period / recurrence）</span></td>
+              <td class="mono">service / dynamic-l3vpn<br><span class="sub">case dynamic-networking：provisioning-delay-profile-id、networking-schedule</span></td>
+              <td><span class="type-tag type-d">D</span></td>
+              <td>schedule 子树（RFC 9922 分组）原样翻译；dynamic-networking 与 dynamic-bandwidth-adjustment 互斥约束在两层保持一致。</td>
+            </tr>
+            <tr>
+              <td class="mono">service / dynamic-l3vpn<br><span class="sub">case dynamic-bandwidth-adjustment：bandwidth-adjustment-profile-id、temporary-input-bandwidth、temporary-output-bandwidth、bandwidth-adjustment-schedule</span></td>
+              <td class="mono">service / dynamic-l3vpn<br><span class="sub">case dynamic-bandwidth-adjustment：bandwidth-adjustment-profile-id、temporary-ce-to-pe-bandwidth、temporary-pe-to-ce-bandwidth、bandwidth-adjustment-schedule</span></td>
+              <td><span class="type-tag type-d">D</span></td>
+              <td><b>方向互换</b>：input→ce-to-pe、output→pe-to-ce（客户视角 vs 网络视角）；临时值为绝对值而非增量；schedule 原样。</td>
+            </tr>
+            <tr>
+              <td class="mono">dynamic-l3vpn / … / actual-start-time、actual-stop-time（ro）</td>
+              <td class="mono">dynamic-l3vpn / … / actual-start-time、actual-stop-time（ro）</td>
+              <td><span class="type-tag type-d">D</span></td>
+              <td>只读，<b>向上流动</b>：控制器在激活/去激活时填 L3NM，编排器再暴露到 L3SM 供客户校验 provisioning-delay SLO。</td>
+            </tr>
+            <tr>
+              <td class="mono">classification-policy（site 级，含 target-sites）</td>
+              <td class="mono">classification-policy（vpn-node 级）</td>
+              <td><span class="type-tag type-dr">D/R</span></td>
+              <td>匹配条件（dscp、dot1p、协议字段、IP 前缀、L4 端口、match-application）与 target-class-id 原样翻译；<b>派生在作用域</b>：site 级 target-sites 由编排器展开为承载这些站点的 vpn-node 规则。</td>
+            </tr>
+            <tr>
+              <td class="mono">classification-policy（site-network-access 级）</td>
+              <td class="mono">classification-policy（vpn-network-access 级）</td>
+              <td><span class="type-tag type-d">D</span></td>
+              <td>RFC 9182 的 vpn-node→access 继承机制镜像 RFC 8299 的 site→access 继承，继承规则无需额外翻译。</td>
+            </tr>
+            <tr>
+              <td class="mono">qos custom classes / class / isolation</td>
+              <td class="mono">qos qos-action / rule / isolation</td>
+              <td><span class="type-tag type-r">R</span></td>
+              <td>通过 class-id 关联：custom class 的 class-id 成为承载 isolation leaf-list 的 qos-action rule 的 target-class-id；isolation 标识与网络切片 NBI 对齐。</td>
+            </tr>
+            <tr>
+              <td class="mono">oam / perf-mon monitoring / monitor [target-site-id]<br><span class="sub">profile、interval、metrics、status</span></td>
+              <td class="mono">perf-mon monitoring / monitor [target-vpn-node-id]<br><span class="sub">profile、interval、metrics、status</span></td>
+              <td><span class="type-tag type-dr">D/R</span></td>
+              <td>键从 target-site-id 变为 target-vpn-node-id（编排器解析站点→服务节点）；双归站点按 vpn-node 聚合（聚合方法运营商定义）；测量 profile、自定义 interval（RFC 9375）、metrics 原样。</td>
+            </tr>
+            <tr>
+              <td class="mono">security / encryption-profile<br><span class="sub">case customer-profile：classes / class [class-id]（algorithm、psk、post-quantum-encryption）</span></td>
+              <td class="mono">security / classes / class [class-id]<br><span class="sub">algorithm、psk、post-quantum-encryption</span></td>
+              <td><span class="type-tag type-d">D(*)</span></td>
+              <td>逐类原样翻译（含 pqc/qkd 子树）；编排器保证 class-id 命名空间跨 qos/security/perf-mon 一致；qkd-key-pool-id 跨端点（CE-PE/PE-PE/CE-CE）协调。</td>
+            </tr>
+            <tr>
+              <td class="mono">security / encryption-profile<br><span class="sub">case provider-profile</span></td>
+              <td class="mono">—（无对应）</td>
+              <td><span class="type-tag type-n">N</span></td>
+              <td>引用的 provider profile 留在 OSS，翻译前解析为具体参数；加密边界（CE-to-CE vs PE-to-PE）由站点 management type 决定（该信息本身不跨层）。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== 表 2：增强 L3NM → 设备模型 ===== -->
+    <div class="mt-section">
+      <div class="mt-section-title">
+        <span class="tag-ext">增强</span>表 2 · 增强 L3NM → 设备模型落点
+        <span class="sec-src">draft-huang-onsen-l3vpn-model-mapping-01 §6（扩展部分）</span>
+      </div>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32%">增强 L3NM 节点<br><span style="font-weight:400;font-size:10.5px">ietf-l3vpn-ntw-ext</span></th>
+              <th style="width:32%">设备级模型落点</th>
+              <th style="width:7%">类型</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">networking-schedule / bandwidth-adjustment-schedule<br><span class="sub">ietf-schedule 分组（RFC 9922）</span></td>
+              <td class="mono">无标准设备模型<br><span class="sub">调度器驻留控制器</span></td>
+              <td><span class="type-tag type-n">N</span></td>
+              <td><span class="gap">Gap G8</span>控制器充当调度器：存储 schedule、在激活时刻前推送派生配置（满足 provisioning-delay SLO）、停止时刻撤回，并回填 actual-start/stop-time。增强方向：schedule-aware 激活分组。</td>
+            </tr>
+            <tr>
+              <td class="mono">temporary-pe-to-ce- / temporary-ce-to-pe-bandwidth</td>
+              <td class="mono">设备 QoS rate 对象（policer / shaper）</td>
+              <td><span class="type-tag type-n">N</span></td>
+              <td><span class="gap">Gap G4</span>无标准设备 QoS 模型（厂商私有）；增强方向：带调度速率集 + actual-bandwidth 遥测的 QoS 模型。</td>
+            </tr>
+            <tr>
+              <td class="mono">classification-policy match-flow<br><span class="sub">dscp、L4 端口、IP 前缀</span></td>
+              <td class="mono">ietf-access-control-list（RFC 8519）ACEs</td>
+              <td><span class="type-tag type-d">D(*)</span></td>
+              <td>覆盖常见头部字段匹配；ACL 条目继承规则顺序；ACL 名/元数据保留 target-class-id，供 QoS/security 在设备上引用同一 class。</td>
+            </tr>
+            <tr>
+              <td class="mono">classification-policy match-application、dot1p</td>
+              <td class="mono">无标准设备模型</td>
+              <td><span class="type-tag type-n">N</span></td>
+              <td>应用识别（DPI）无标准设备模型；dot1p 需 L2 标记支持。</td>
+            </tr>
+            <tr>
+              <td class="mono">qos-action rule isolation</td>
+              <td class="mono">Slice/NRP 绑定 SR Policy + 队列资源分区</td>
+              <td><span class="type-tag type-r">R</span></td>
+              <td>与网络切片 NBI（draft-ietf-teas-ietf-network-slice-nbi-yang）对齐；设备侧厂商私有。</td>
+            </tr>
+            <tr>
+              <td class="mono">perf-mon monitor、metrics<br><span class="sub">one-way/two-way delay、delay variation、packet loss</span></td>
+              <td class="mono">测量会话模型（STAMP YANG）+ YANG-Push（RFC 8639/8641）上报</td>
+              <td><span class="type-tag type-dr">D/R</span></td>
+              <td>唯一部分标准化路径：STAMP/TWAMP 会话模型配置测量，YANG-Push 回传指标；VPN 节点对聚合由控制器派生。<span class="gap">Gap G10</span></td>
+            </tr>
+            <tr>
+              <td class="mono">security classes / class：algorithm、psk</td>
+              <td class="mono">IPsec/IKE 设备模型（draft-ietf-ipsecme-yang-ipsec）</td>
+              <td><span class="type-tag type-r">R</span></td>
+              <td>PQC 密钥交换需 RFC 9370 多密钥交换支持。</td>
+            </tr>
+            <tr>
+              <td class="mono">post-quantum-encryption<br><span class="sub">pqc algorithm、qkd-key-pool-id、key-refresh-interval、post-quantum-policy</span></td>
+              <td class="mono">无标准设备模型</td>
+              <td><span class="type-tag type-n">N</span></td>
+              <td><span class="gap">Gap G9</span>缺 PQC 算法标识（IKE/IPsec 模型）与 QKD 密钥交付 YANG 接口（现为 ETSI GS QKD 014 REST API，在 YANG 之外）。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== 折叠区：基础模型映射速查 ===== -->
+    <details class="collapse">
+      <summary>基础模型映射速查（RFC 8299 ↔ RFC 9182 ↔ 设备模型 · §5.1–5.4 + §6 基础部分）</summary>
+      <div class="inner">
+        <div class="mt-section-title" style="border-radius:6px">
+          <span>基础 · L3SM → L3NM（§5.1–5.4）</span>
+        </div>
+        <div class="table-box">
+          <table>
+            <thead><tr><th style="width:34%">L3SM（ietf-l3vpn-svc）</th><th style="width:34%">L3NM（ietf-l3vpn-ntw）</th><th style="width:7%">类型</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">vpn-id</td><td class="mono">vpn-id</td><td><span class="type-tag type-d">D</span></td><td>全链路关联键，建议端到端保持一致（唯一跨层存活的标识）。</td></tr>
+              <tr><td class="mono">customer-name</td><td class="mono">—（无对应）</td><td><span class="type-tag type-n">N</span></td><td>良性丢弃，OSS 保留并按 vpn-id 关联。</td></tr>
+              <tr><td class="mono">vpn-service-topology</td><td class="mono">vpn-service-topology</td><td><span class="type-tag type-d">D</span></td><td>枚举直接映射，但实现依赖 RT 构造（见下）。</td></tr>
+              <tr><td class="mono">cloud-accesses / cloud-access</td><td class="mono">via SAP（RFC 9408）</td><td><span class="type-tag type-d">D(*)</span></td><td>需编排器已注册 SAP，否则为派生步骤。</td></tr>
+              <tr><td class="mono">site-id</td><td class="mono">vpn-node-id（并入命名方案）</td><td><span class="type-tag type-r">R</span></td><td>站点→PE 非一对一：一个 site 映射一个或多个 vpn-node。</td></tr>
+              <tr><td class="mono">locations / location、devices（CE）</td><td class="mono">—（无对应）</td><td><span class="type-tag type-n">N</span></td><td>客户侧事实，OSS 保留并作为 PE 选择输入。</td></tr>
+              <tr><td class="mono">management type</td><td class="mono">部分（决定允许的路由选项）</td><td><span class="type-tag type-r">R</span></td><td>指导但不出现在 L3NM 实例中。</td></tr>
+              <tr><td class="mono">site-diversity / diversity-groups</td><td class="mono">vpn-network-access group-ids</td><td><span class="type-tag type-d">D</span></td><td>干净的直接映射。</td></tr>
+              <tr><td class="mono">site-network-access-id</td><td class="mono">id（命名方案内）</td><td><span class="type-tag type-r">R</span></td><td>—</td></tr>
+              <tr><td class="mono">bearer-reference</td><td class="mono">AC reference（RFC 9835）</td><td><span class="type-tag type-r">R(*)</span></td><td><span class="gap">Gap G3</span>承载/AC 关联缝：需引用约定。</td></tr>
+              <tr><td class="mono">ip-connection / addresses</td><td class="mono">connection / ip-connection / addresses</td><td><span class="type-tag type-d">D</span></td><td>客户与运营商地址。</td></tr>
+              <tr><td class="mono">routing-protocols（bgp/ospf/static/direct）</td><td class="mono">routing-protocols（per-access 列表）</td><td><span class="type-tag type-d">D</span></td><td>—</td></tr>
+              <tr><td class="mono">service / svc-input-bandwidth、svc-output-bandwidth</td><td class="mono">qos / qos-profiles 或 custom QoS</td><td><span class="type-tag type-r">R</span></td><td>命名 profile 两侧都有则直接；custom classes 需派生每类速率与队列。</td></tr>
+              <tr><td class="mono">service / qos</td><td class="mono">qos</td><td><span class="type-tag type-dr">D/R</span></td><td>—</td></tr>
+              <tr><td class="mono">security / encryption</td><td class="mono">（underlay 相关，无直接叶子）</td><td><span class="type-tag type-r">R</span></td><td>—</td></tr>
+              <tr><td class="mono">service / mtu</td><td class="mono">connection / mtu</td><td><span class="type-tag type-d">D</span></td><td>下钻校验点：超出 underlay MTU 仅在设备层暴露。</td></tr>
+              <tr><td class="mono">∅（无 L3SM 源）</td><td class="mono">route-distinguisher（RD）</td><td><span class="type-tag type-r">R</span></td><td><span class="gap">Gap G1</span>按 vpn-node 从运营商 RD 计划分配（如 &lt;loopback ASN&gt;:&lt;ordinal&gt;）。</td></tr>
+              <tr><td class="mono">∅</td><td class="mono">route-targets（RT）</td><td><span class="type-tag type-r">R</span></td><td><span class="gap">Gap G1</span>由拓扑派生：any-to-any 单 RT；hub-spoke 构造 hub/spoke 双 RT 及 import/export 角色。</td></tr>
+              <tr><td class="mono">∅</td><td class="mono">ne-id（PE 选择）</td><td><span class="type-tag type-r">R</span></td><td><span class="gap">Gap G1</span>由位置、承载终接、容量、多样性约束派生。</td></tr>
+              <tr><td class="mono">∅</td><td class="mono">router-id / loopback 编址</td><td><span class="type-tag type-r">R</span></td><td>运营商编址计划，服务层不可见。</td></tr>
+              <tr><td class="mono">∅</td><td class="mono">underlay transport binding</td><td><span class="type-tag type-r">R</span></td><td>如 SR Policy（color+endpoint）承载 VPN 路由；L3SM 不表达传输。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-section-title" style="border-radius:6px;margin-top:16px">
+          <span>基础 · L3NM → 设备模型（§6 基础部分）</span>
+        </div>
+        <div class="table-box">
+          <table>
+            <thead><tr><th style="width:34%">L3NM 构造</th><th style="width:34%">设备级模型</th><th style="width:7%">类型</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">vpn-node + active-vpn-instance-profiles（RD、vpn-targets）</td><td class="mono">ietf-vrf（RFC 8529）：VRF 实例含 RD/RT</td><td><span class="type-tag type-d">D</span></td><td>链路最成熟环节，RFC 8529 为此分解而设计。</td></tr>
+              <tr><td class="mono">vpn-network-access / connection（接口、封装）</td><td class="mono">ietf-interfaces（RFC 8343）：逻辑（子）接口，经 ietf-vrf 绑定 VRF</td><td><span class="type-tag type-d">D</span></td><td>—</td></tr>
+              <tr><td class="mono">connection / ip-connection（运营商地址、前缀长度）</td><td class="mono">ietf-ip（RFC 8344）：接口 IPv4/IPv6 地址</td><td><span class="type-tag type-d">D</span></td><td>—</td></tr>
+              <tr><td class="mono">routing-protocols / bgp</td><td class="mono">ietf-bgp（draft-ietf-idr-bgp-model）：VRF 域 BGP 邻居</td><td><span class="type-tag type-d">D</span></td><td><span class="gap">Gap G5</span>模型在研，多厂商常回退厂商模型。</td></tr>
+              <tr><td class="mono">routing-protocols / ospf</td><td class="mono">ietf-ospf（RFC 9129）：VRF 域 OSPF 实例</td><td><span class="type-tag type-d">D</span></td><td>—</td></tr>
+              <tr><td class="mono">routing-protocols / static</td><td class="mono">ietf-routing（RFC 8349）：VRF 静态路由</td><td><span class="type-tag type-d">D</span></td><td>—</td></tr>
+              <tr><td class="mono">export / import policy 引用</td><td class="mono">ietf-routing-policy（RFC 9067）</td><td><span class="type-tag type-d">D</span></td><td>—</td></tr>
+              <tr><td class="mono">qos profiles</td><td class="mono">（无标准设备 QoS 模型；厂商私有）</td><td><span class="type-tag type-n">N</span></td><td><span class="gap">Gap G4</span>结构性缺口：QoS 意图止于 L3NM。</td></tr>
+              <tr><td class="mono">underlay transport binding（如 SR Policy color）</td><td class="mono">SR Policy YANG（在研）+ BGP steering 配置</td><td><span class="type-tag type-r">R</span></td><td><span class="gap">Gap G6</span>标准化时序缺口。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <!-- ===== 脚注 ===== -->
+    <div class="mt-foot">
+      <b>Gap 索引：</b>
+      G1 无标准化派生策略模型（RD/RT/PE 选择/命名） ·
+      G3 承载/AC 关联缝 ·
+      G4 无标准设备 QoS 模型 ·
+      G5 BGP 设备模型未标准化 ·
+      G6 传输绑定模型在研 ·
+      G8 无标准设备调度激活模型 ·
+      G9 抗量子加密设备链最不成熟 ·
+      G10 VPN 节点对指标聚合未标准化
+      <br>
+      本页为映射规则速查（非权威）；完整参数级表格与逐条说明见
+      <span class="mono">draft-huang-onsen-l3vpn-model-mapping-01</span>（§5.5、§6、§8、附录 A）。
+    </div>
+
+  </div>
+</details>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   页面一 · 交互脚本（UI 级 + 模拟映射引擎）
+   说明：真实映射引擎后续接入；此处以客户端模拟引擎演示：
+   整批脉冲（橙=COPY ① / 绿=DERIVE ② / ③=SPLIT）、因果编号反查、
+   跟随模式、设备未读角标、无损指标实时计算、变更台账追加
+   规则知识库基于 draft-huang-onsen-l3vpn-model-mapping-01（§5/§6）
+   ============================================================ */
+(function () {
+  'use strict';
+  var toastTimer = null;
+  function toast(msg) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2200);
+  }
+
+  /* ---------- 跟随模式开关 ---------- */
+  var followToggle = document.getElementById('followToggle');
+  var followState = document.getElementById('followState');
+  var followOn = true;
+  followToggle.addEventListener('click', function () {
+    followOn = !followOn;
+    followToggle.classList.toggle('off', !followOn);
+    followState.textContent = followOn ? 'ON' : 'OFF';
+    toast(followOn ? '跟随模式已开启：变更将自动跳转 + 整批脉冲高亮' : '跟随模式已关闭：手动滚动任一面板即自动切 OFF');
+  });
+
+  /* 手动滚动任一面板 → 自动切 OFF（跟随模式要求） */
+  var scrollables = document.querySelectorAll('.code-view, .tree-view, .rule-list, .ledger-body');
+  scrollables.forEach(function (el) {
+    el.addEventListener('scroll', function () {
+      if (followOn) {
+        followOn = false;
+        followToggle.classList.add('off');
+        followState.textContent = 'OFF';
+        toast('检测到手动滚动，跟随模式已自动关闭（可点击恢复）');
+      }
+    }, { passive: true });
+  });
+
+  /* ---------- 经典 / 增强 子页签切换 ---------- */
+  document.querySelectorAll('.sub-tabs').forEach(function (tabs) {
+    tabs.addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      var seg = tabs.closest('.segment');
+      var part = btn.dataset.part;
+      tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      seg.querySelectorAll('[data-part-pane]').forEach(function (pane) {
+        pane.hidden = pane.dataset.partPane !== part;
+      });
+      var activeView = seg.querySelector('.view-toggle button.on');
+      if (activeView) {
+        var view = activeView.dataset.view;
+        seg.querySelectorAll('[data-part-pane]:not([hidden]) [data-view-pane]').forEach(function (pane) {
+          pane.hidden = pane.dataset.viewPane !== view;
+        });
+      }
+    });
+  });
+
+  /* ---------- JSON / tree 视图切换（仅作用于当前激活的子页签） ---------- */
+  document.querySelectorAll('.view-toggle').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      var seg = group.closest('.segment');
+      var view = btn.dataset.view;
+      group.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      seg.querySelectorAll('[data-part-pane]:not([hidden]) [data-view-pane]').forEach(function (pane) {
+        pane.hidden = pane.dataset.viewPane !== view;
+      });
+    });
+  });
+
+  /* ---------- 设备页签（段 C） ---------- */
+  var deviceTabs = document.getElementById('deviceTabs');
+  deviceTabs.addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    var dev = btn.dataset.device;
+    deviceTabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+    document.querySelectorAll('[data-device-pane]').forEach(function (pane) {
+      pane.hidden = pane.dataset.devicePane !== dev;
+    });
+    clearUnread(dev);
+  });
+
+  /* ---------- 左栏导航 → 聚焦中栏对应段 ---------- */
+  document.querySelectorAll('.module-card[data-target]').forEach(function (card) {
+    card.addEventListener('click', function () {
+      var target = document.getElementById(card.dataset.target);
+      if (!target) return;
+      document.querySelectorAll('.module-card').forEach(function (c) { c.classList.remove('active'); });
+      card.classList.add('active');
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      target.style.outline = '2px solid rgba(59,130,246,.5)';
+      setTimeout(function () { target.style.outline = 'none'; }, 1200);
+    });
+  });
+
+  /* ============================================================
+     模拟映射引擎（demo）· 规则知识库基于草案 §5/§6
+     ============================================================ */
+  var engine = {
+    batchNo: 7,
+    ledgerCount: 0,
+    unread: { pe1: 1, pe2: 1, pe3: 0 }
+  };
+
+  /* 字段 → 规则链：{ rule, kind: copy|derive|split|none, num: 1|2|3, targets:[data-field], devices:[peX] } */
+  var FIELD_CHAINS = {
+    'vpn-id': [
+      { rule: 'rule-vpn-id', kind: 'copy', num: 1, targets: ['vpn-id-b'] },
+      { rule: 'rule-vrf', kind: 'copy', num: 1, targets: ['ni-pe1', 'ni-pe2', 'ni-pe3'], devices: ['pe1', 'pe2', 'pe3'] }
+    ],
+    'topology': [
+      { rule: 'rule-topology', kind: 'copy', num: 1, targets: ['topology-b'] },
+      { rule: 'rule-rt', kind: 'derive', num: 2, targets: ['rt-b', 'rt-c-pe1', 'rt-c-pe2'], devices: ['pe1', 'pe2'] }
+    ],
+    'site-id': [
+      { rule: 'rule-site-node', kind: 'derive', num: 2, targets: ['vpn-node-id-b'] }
+    ],
+    'site-role': [
+      { rule: 'rule-site-node', kind: 'derive', num: 2, targets: ['vpn-node-id-b'] }
+    ],
+    'ip-connection': [
+      { rule: 'rule-ip-conn', kind: 'copy', num: 1, targets: ['ip-conn-b'] },
+      { rule: 'rule-iface', kind: 'split', num: 3, targets: ['iface-pe1', 'iface-pe2', 'iface-pe3'], devices: ['pe1', 'pe2', 'pe3'] },
+      { rule: 'rule-ip', kind: 'copy', num: 1, targets: ['ip-c-pe1', 'ip-c-pe2'] }
+    ],
+    'routing-protocols': [
+      { rule: 'rule-routing', kind: 'copy', num: 1, targets: ['routing-b'] },
+      { rule: 'rule-bgp', kind: 'copy', num: 1, targets: ['bgp-pe1'] },
+      { rule: 'rule-static', kind: 'copy', num: 1, targets: ['static-pe2'] }
+    ],
+    'svc-input-bandwidth': [
+      { rule: 'rule-bw', kind: 'derive', num: 2, targets: ['bw-b'] }
+    ],
+    'svc-output-bandwidth': [
+      { rule: 'rule-bw', kind: 'derive', num: 2, targets: ['bw-b'] }
+    ],
+    'vpn-targets': [
+      { rule: 'rule-rt', kind: 'derive', num: 2, targets: ['rt-b', 'rt-c-pe1', 'rt-c-pe2'], devices: ['pe1', 'pe2'] }
+    ],
+    'customer': [
+      { rule: 'rule-customer-name', kind: 'none', num: 0, targets: [] }
+    ],
+    'dynamic-type': [
+      { rule: 'rule-dyn', kind: 'copy', num: 1, targets: ['dynamic-l3vpn'] }
+    ],
+    'provisioning-delay-profile-id': [
+      { rule: 'rule-dyn', kind: 'copy', num: 1, targets: ['dynamic-l3vpn'] }
+    ],
+    'schedule-id': [
+      { rule: 'rule-dyn', kind: 'copy', num: 1, targets: ['dynamic-l3vpn'] }
+    ],
+    'bandwidth-adjustment-profile-id': [
+      { rule: 'rule-dyn', kind: 'copy', num: 1, targets: ['dynamic-l3vpn'] }
+    ],
+    'temporary-input-bandwidth': [
+      { rule: 'rule-dyn', kind: 'copy', num: 1, targets: ['dynamic-l3vpn'] }
+    ],
+    'temporary-output-bandwidth': [
+      { rule: 'rule-dyn', kind: 'copy', num: 1, targets: ['dynamic-l3vpn'] }
+    ],
+    'target-class-id': [
+      { rule: 'rule-class', kind: 'copy', num: 1, targets: ['sec-class'] }
+    ],
+    'isolation': [
+      { rule: 'rule-class', kind: 'derive', num: 2, targets: [] },
+      { rule: 'rule-isolation', kind: 'derive', num: 2, targets: [] }
+    ],
+    'target-site-id': [
+      { rule: 'rule-perfmon', kind: 'derive', num: 2, targets: ['perf-mon'] }
+    ],
+    'perf-mon-enable': [
+      { rule: 'rule-perfmon', kind: 'derive', num: 2, targets: ['perf-mon'] }
+    ],
+    'sec-class-id': [
+      { rule: 'rule-sec', kind: 'copy', num: 1, targets: ['sec-class'] }
+    ],
+    'sec-algorithm': [
+      { rule: 'rule-sec', kind: 'copy', num: 1, targets: ['sec-class'] }
+    ],
+    'pqc': [
+      { rule: 'rule-sec', kind: 'copy', num: 1, targets: ['sec-class'] }
+    ],
+    'qkd': [
+      { rule: 'rule-sec', kind: 'copy', num: 1, targets: ['sec-class'] }
+    ],
+    'key-refresh-interval': [
+      { rule: 'rule-sec', kind: 'copy', num: 1, targets: ['sec-class'] }
+    ]
+  };
+
+  /* 规则出处（台账用） */
+  var RULE_SRC = {
+    'rule-vpn-id': '§5.1 vpn-id → vpn-id（全链路关联键）',
+    'rule-topology': '§5.1 vpn-service-topology → vpn-service-topology',
+    'rule-customer-name': '§5.1 customer-name → 无对应（N，OSS 保留）',
+    'rule-site-node': '§5.2 site-id → vpn-node-id 命名方案',
+    'rule-diversity': '§5.2 site-diversity → group-ids',
+    'rule-sna-id': '§5.3 site-network-access-id → id',
+    'rule-ip-conn': '§5.3 ip-connection/addresses → connection/ip-connection',
+    'rule-routing': '§5.3 routing-protocols → routing-protocols',
+    'rule-bw': '§5.3 svc-input/output-bandwidth → qos 带宽（方向互换）',
+    'rule-mtu': '§5.3 service/mtu → connection/mtu',
+    'rule-rd': '§5.4 ∅ → route-distinguisher（Gap G1）',
+    'rule-rt': '§5.4 ∅ → route-targets（拓扑→RT 计划）',
+    'rule-pe': '§5.4 ∅ → ne-id（PE 选择）',
+    'rule-dyn': '§5.5 dynamic-l3vpn → dynamic-l3vpn（方向互换）',
+    'rule-class': '§5.5 classification-policy site → vpn-node 展开',
+    'rule-perfmon': '§5.5 perf-mon target-site → target-vpn-node',
+    'rule-sec': '§5.5 security classes → classes（class-id 一致）',
+    'rule-vrf': '§6 vpn-node + instance-profiles → ietf-vrf VRF（RD/RT）',
+    'rule-iface': '§6 vpn-network-access/connection → ietf-interfaces 子接口',
+    'rule-ip': '§6 connection/ip-connection → ietf-ip 地址',
+    'rule-bgp': '§6 routing-protocols/bgp → ietf-bgp VRF 邻居（Gap G5）',
+    'rule-ospf': '§6 routing-protocols/ospf → ietf-ospf',
+    'rule-static': '§6 routing-protocols/static → ietf-routing 静态路由',
+    'rule-policy': '§6 export/import policy → ietf-routing-policy',
+    'rule-qos': '§6 qos profiles → 无标准设备模型（Gap G4）',
+    'rule-transport': '§6 underlay transport → SR Policy + BGP steering（Gap G6）',
+    'rule-sched': '§6 schedule → 控制器调度（Gap G8）',
+    'rule-acl': '§6 classification-policy match-flow → ietf-acl ACEs',
+    'rule-isolation': '§6 qos-action isolation → Slice/NRP 绑定',
+    'rule-stamp': '§6 perf-mon → STAMP + YANG-Push',
+    'rule-ipsec': '§6 security classes → IPsec/IKE 模型',
+    'rule-pqc': '§6 post-quantum-encryption → 无标准模型（Gap G9）'
+  };
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function nowTs() {
+    var d = new Date();
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()) + '.' + String(d.getMilliseconds()).padStart(3, '0');
+  }
+
+  function flashEl(el, doScroll) {
+    if (!el) return;
+    el.classList.remove('hl-flash');
+    void el.offsetWidth; /* 重启动画 */
+    el.classList.add('hl-flash');
+    if (doScroll !== false) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* 设置/更新因果编号徽标 */
+  function setBadge(el, num, kind) {
+    if (!el || !num) return;
+    var badge = el.querySelector('.num-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'num-badge';
+      if (el.classList.contains('code-line')) {
+        el.appendChild(badge);
+      } else {
+        var row = el.querySelector('.badge-row');
+        if (!row) {
+          row = document.createElement('span');
+          row.className = 'badge-row';
+          el.appendChild(row);
+        }
+        row.appendChild(badge);
+      }
+    }
+    badge.textContent = num;
+    badge.classList.toggle('green', kind === 'derive');
+    badge.classList.toggle('gray', kind === 'none');
+  }
+
+  /* 若目标位于隐藏子页签/设备页，自动激活 */
+  function activatePaneFor(el) {
+    var pane = el.closest('[data-part-pane]');
+    if (pane && pane.hidden) {
+      var seg = pane.closest('.segment');
+      var part = pane.dataset.partPane;
+      seg.querySelectorAll('.sub-tabs button').forEach(function (b) {
+        b.classList.toggle('on', b.dataset.part === part);
+      });
+      seg.querySelectorAll('[data-part-pane]').forEach(function (p) { p.hidden = p.dataset.partPane !== part; });
+      var activeView = seg.querySelector('.view-toggle button.on');
+      if (activeView) {
+        var view = activeView.dataset.view;
+        seg.querySelectorAll('[data-part-pane]:not([hidden]) [data-view-pane]').forEach(function (p) {
+          p.hidden = p.dataset.viewPane !== view;
+        });
+      }
+    }
+    var dpane = el.closest('[data-device-pane]');
+    if (dpane && dpane.hidden) {
+      var dev = dpane.dataset.devicePane;
+      deviceTabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.device === dev); });
+      document.querySelectorAll('[data-device-pane]').forEach(function (p) { p.hidden = p.dataset.devicePane !== dev; });
+    }
+  }
+
+  /* 台账追加 */
+  function appendLedger(field, value, batchNo, num, src, kind) {
+    var tbody = document.querySelector('#ledger tbody');
+    var tr = document.createElement('tr');
+    var tag = kind === 'derive'
+      ? '<span class="tag derive">DERIVE</span>'
+      : '<span class="tag batch">批 #' + batchNo + '</span>';
+    var numTxt = num ? '①②③'.charAt(num - 1) : '—';
+    tr.innerHTML = '<td>' + nowTs() + '</td><td class="mono">' + field + '</td><td class="mono">' + value + '</td><td>' + tag + '</td><td>' + numTxt + '</td><td class="mono">' + src + '</td>';
+    tbody.insertBefore(tr, tbody.firstChild);
+    engine.ledgerCount++;
+    document.getElementById('ledgerCount').textContent = engine.ledgerCount;
+  }
+
+  /* 设备未读角标 */
+  function bumpUnread(dev) {
+    var btn = deviceTabs.querySelector('button[data-device="' + dev + '"]');
+    if (!btn) return;
+    var badge = btn.querySelector('.dot-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'dot-badge';
+      btn.appendChild(badge);
+    }
+    var n = (parseInt(badge.textContent, 10) || 0) + 1;
+    badge.textContent = n;
+    engine.unread[dev] = n;
+  }
+  function clearUnread(dev) {
+    var btn = deviceTabs.querySelector('button[data-device="' + dev + '"]');
+    if (btn) {
+      var b = btn.querySelector('.dot-badge');
+      if (b) b.textContent = '0';
+    }
+    engine.unread[dev] = 0;
+  }
+
+  /* 模拟一次映射批次：一个输入 → 整批下游变更 */
+  function simulateBatch(fieldName, value) {
+    var chain = FIELD_CHAINS[fieldName];
+    var batchNo = ++engine.batchNo;
+    var srcEl = document.querySelector('.seg-body [data-field="' + fieldName + '"]');
+    var srcField = srcEl ? srcEl.closest('.field') : null;
+
+    /* 指标：进入计算态 */
+    var respEl = document.getElementById('mResp');
+    respEl.textContent = '计算中…';
+    respEl.classList.remove('ok');
+    respEl.classList.add('busy');
+    document.querySelector('.metrics-bar').classList.add('computing');
+    var t0 = performance.now();
+
+    /* 1) 源字段：橙 + ① */
+    if (srcField) {
+      srcField.classList.remove('derived');
+      srcField.classList.add('changed');
+      setBadge(srcField, 1, 'copy');
+      flashEl(srcField, false);
+    }
+
+    if (!chain) {
+      appendLedger(fieldName, value, batchNo, null, '无映射规则（N）', 'none');
+      finishBatch(respEl, t0);
+      return;
+    }
+
+    var firstTarget = null;
+    var devicesTouched = [];
+    var activeDev = deviceTabs.querySelector('button.on').dataset.device;
+
+    chain.forEach(function (fx) {
+      /* 右栏规则行：整批脉冲 */
+      var ruleRow = document.getElementById(fx.rule);
+      if (ruleRow) {
+        ruleRow.classList.remove('hl-flash');
+        void ruleRow.offsetWidth;
+        ruleRow.classList.add('hl-flash');
+        if (fx.kind === 'derive') ruleRow.classList.add('derive');
+        else if (fx.kind === 'copy' || fx.kind === 'split') ruleRow.classList.add('copy');
+      }
+      /* 中栏目标字段：橙/绿 + 因果编号 */
+      fx.targets.forEach(function (tf) {
+        document.querySelectorAll('[data-field="' + tf + '"]').forEach(function (el) {
+          activatePaneFor(el);
+          el.classList.remove('changed', 'derived');
+          el.classList.add(fx.kind === 'derive' ? 'derived' : 'changed');
+          setBadge(el, fx.num, fx.kind);
+          flashEl(el, false);
+          if (!firstTarget) firstTarget = el;
+        });
+      });
+      /* SPLIT：多设备未读角标 */
+      (fx.devices || []).forEach(function (dev) {
+        if (devicesTouched.indexOf(dev) < 0) devicesTouched.push(dev);
+        if (dev !== activeDev) bumpUnread(dev);
+      });
+      /* 台账 */
+      appendLedger(fx.rule.replace(/^rule-/, ''), value, batchNo, fx.num, RULE_SRC[fx.rule] || fx.rule, fx.kind);
+    });
+
+    /* 跟随模式：自动跳转（先 L3NM 目标，再设备目标） */
+    if (followOn && firstTarget) {
+      firstTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (devicesTouched.length) {
+        setTimeout(function () {
+          var pane = document.querySelector('[data-device-pane="' + devicesTouched[0] + '"]');
+          if (pane) pane.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 700);
+      }
+    }
+
+    finishBatch(respEl, t0);
+  }
+
+  function finishBatch(respEl, t0) {
+    var dt = Math.round(performance.now() - t0);
+    var shown = Math.max(60, Math.min(280, dt + Math.round(Math.random() * 60)));
+    setTimeout(function () {
+      respEl.textContent = shown + 'ms';
+      respEl.classList.remove('busy');
+      respEl.classList.add('ok');
+      document.querySelector('.metrics-bar').classList.remove('computing');
+    }, 350);
+  }
+
+  /* 表单字段变更 → 真实引擎（WS 可用时）或模拟批次 */
+  document.querySelectorAll('.seg-body input, .seg-body select').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var wrap = input.closest('.field');
+      var f = input.dataset.field || (wrap && wrap.dataset.field) || 'unknown';
+      if (wsConnected) { triggerRealMapping(); return; }
+      simulateBatch(f, input.value);
+    });
+  });
+
+  /* ---------- 规则行 ↔ 中栏字段 双向反查（扩展：同时聚焦源字段） ---------- */
+  document.querySelectorAll('.rule-row').forEach(function (row) {
+    row.addEventListener('click', function () {
+      var field = row.dataset.field;
+      if (field) {
+        document.querySelectorAll('[data-field="' + field + '"]').forEach(function (el) {
+          activatePaneFor(el);
+          flashEl(el);
+        });
+      }
+      var src = row.dataset.src;
+      if (src) {
+        var s = document.querySelector('.seg-body [data-field="' + src + '"]');
+        if (s) { activatePaneFor(s); flashEl(s); }
+      }
+      toast('反查：' + row.querySelector('.r-name').textContent);
+    });
+  });
+
+  /* 点中栏编号徽标 → 右栏规则行滚动到位 */
+  document.querySelectorAll('.num-badge[data-rule]').forEach(function (badge) {
+    badge.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var rule = document.getElementById(badge.dataset.rule);
+      flashEl(rule);
+      toast('反查规则：' + (rule ? rule.querySelector('.r-name').textContent : ''));
+    });
+  });
+
+  /* ---------- 变更台账展开 ---------- */
+  var ledger = document.getElementById('ledger');
+  document.getElementById('ledgerToggle').addEventListener('click', function () {
+    ledger.classList.toggle('open');
+  });
+
+  /* ---------- 映射关系总表（内嵌）展开 ---------- */
+  var mapTableLink = document.getElementById('mapTableLink');
+  var mapTableEmbed = document.getElementById('mapTableEmbed');
+  if (mapTableLink && mapTableEmbed) {
+    mapTableLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (!mapTableEmbed.open) mapTableEmbed.open = true;
+      mapTableEmbed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast('映射关系总表：已展开（点击标题可收起）');
+    });
+  }
+
+  /* ---------- 初始化台账计数 ---------- */
+  engine.ledgerCount = document.querySelectorAll('#ledger tbody tr').length;
+  document.getElementById('ledgerCount').textContent = engine.ledgerCount;
+
+  /* ============================================================
+     真实映射引擎接入（WebSocket）· 后端不可用时降级模拟引擎
+     ============================================================ */
+  /* 端口自适应：从页面 URL 取端口（打包后随服务端口变化），默认 8000 */
+  var WS_PORT = (location.port ? parseInt(location.port, 10) : 8000);
+  var wsConnected = false;
+  var ws = null;
+  var wsBusy = false;
+
+  /* trace 叶子名 → 前端 data-field 映射 */
+  var TRACE_FIELD_MAP = {
+    'vpn-id': { src: 'vpn-id', tgt: ['vpn-id-b'] },
+    'vpn-name': { src: 'vpn-name', tgt: [] },
+    'vpn-description': { src: 'vpn-description', tgt: [] },
+    'vpn-type': { src: 'vpn-type', tgt: [] },
+    'customer-name': { src: 'customer', tgt: [] },
+    'vpn-service-topology': { src: 'topology', tgt: ['topology-b'] },
+    'cloud-accesses': { src: 'cloud-access', tgt: [] },
+    'vpn-profiles': { src: 'vpn-profiles', tgt: [] },
+    'site-id': { src: 'site-id', tgt: ['vpn-node-id-b'] },
+    'site-name': { src: 'site-name', tgt: [] },
+    'site-role': { src: 'site-role', tgt: ['vpn-node-id-b'] },
+    'locations': { src: 'locations', tgt: [] },
+    'devices': { src: 'devices', tgt: [] },
+    'management': { src: 'management', tgt: [] },
+    'site-diversity': { src: 'site-diversity', tgt: [] },
+    'site-network-access-id': { src: 'sna-id', tgt: ['vna-id-b'] },
+    'site-network-access-type': { src: 'sna-type', tgt: ['vna-type-b'] },
+    'ip-connection': { src: 'ip-connection', tgt: ['ip-conn-b'] },
+    'routing-protocols': { src: 'routing-protocols', tgt: ['routing-b'] },
+    'svc-input-bandwidth': { src: 'svc-input-bandwidth', tgt: ['bw-b'] },
+    'svc-output-bandwidth': { src: 'svc-output-bandwidth', tgt: ['bw-b'] },
+    'mtu': { src: 'mtu', tgt: ['mtu-b'] },
+    'security': { src: 'security', tgt: [] },
+    'encryption': { src: 'security', tgt: [] },
+    'rd': { src: 'vpn-id', tgt: ['rd-b'] },
+    'vpn-targets': { src: 'vpn-targets', tgt: ['rt-b', 'rt-c-pe1', 'rt-c-pe2'] },
+    'ne-id': { src: 'site-id', tgt: ['ne-id-b'] },
+    'router-id': { src: 'vpn-id', tgt: [] },
+    'underlay': { src: 'cloud-access', tgt: [] },
+    'temporary-connection-indicator': { src: 'dynamic-type', tgt: ['dynamic-l3vpn'] },
+    'dynamic-l3vpn': { src: 'dynamic-type', tgt: ['dynamic-l3vpn'] },
+    'dynamic-l3vpn-id': { src: 'dynamic-type', tgt: ['dynamic-l3vpn'] },
+    'adjustment-mode': { src: 'dynamic-type', tgt: ['dynamic-l3vpn'] },
+    'classification-policy': { src: 'target-class-id', tgt: ['sec-class'] },
+    'perf-mon': { src: 'perf-mon-enable', tgt: ['perf-mon'] },
+    'security-classes': { src: 'sec-class-id', tgt: ['sec-class'] },
+    'rule-isolation': { src: 'isolation', tgt: [] },
+    'qos-profile': { src: 'svc-input-bandwidth', tgt: ['bw-b'] },
+    'vrfs': { src: 'vpn-id', tgt: ['ni-pe1', 'ni-pe2', 'ni-pe3'] },
+    'interfaces': { src: 'ip-connection', tgt: ['iface-pe1', 'iface-pe2', 'iface-pe3'] },
+    'bgp': { src: 'routing-protocols', tgt: ['bgp-pe1'] },
+    'static-route': { src: 'routing-protocols', tgt: ['static-pe2'] },
+    'ospf': { src: 'routing-protocols', tgt: ['ospf-pe2'] },
+    'acls': { src: 'target-class-id', tgt: [] },
+    'ipsec': { src: 'sec-algorithm', tgt: [] },
+    'stamp': { src: 'perf-mon-enable', tgt: ['perf-mon'] },
+    'sr-policy': { src: 'vpn-id', tgt: [] }
+  };
+
+  /* trace rule_id → 前端规则行 id */
+  var RULE_ID_MAP = {
+    'R5.1-01': 'rule-vpn-id', 'R5.1-02': 'rule-vpn-id', 'R5.1-03': 'rule-vpn-id',
+    'R5.1-04': 'rule-customer-name', 'R5.1-05': 'rule-vpn-id', 'R5.1-06': 'rule-topology',
+    'R5.1-07': 'rule-transport', 'R5.1-08': 'rule-qos',
+    'R5.2-01': 'rule-site-node', 'R5.2-02': 'rule-site-node', 'R5.2-03': 'rule-site-node',
+    'R5.2-04': 'rule-site-node', 'R5.2-05': 'rule-diversity', 'R5.2-06': 'rule-pe',
+    'R5.2-07': 'rule-site-node', 'R5.2-08': 'rule-diversity',
+    'R5.3-01': 'rule-sna-id', 'R5.3-02': 'rule-sna-id', 'R5.3-03': 'rule-sna-id',
+    'R5.3-04': 'rule-ip-conn', 'R5.3-05': 'rule-routing', 'R5.3-06': 'rule-bw',
+    'R5.3-07': 'rule-bw', 'R5.3-08': 'rule-mtu', 'R5.3-09': 'rule-sec',
+    'R5.4-01': 'rule-rd', 'R5.4-02': 'rule-rt', 'R5.4-03': 'rule-pe',
+    'R5.4-04': 'rule-pe', 'R5.4-05': 'rule-transport',
+    'R5.5-01': 'rule-dyn', 'R5.5-02': 'rule-dyn', 'R5.5-03': 'rule-dyn',
+    'R5.5-04': 'rule-qos', 'R5.5-05': 'rule-class', 'R5.5-06': 'rule-class',
+    'R5.5-07': 'rule-isolation', 'R5.5-08': 'rule-perfmon', 'R5.5-09': 'rule-sec',
+    'R5.5-10': 'rule-sec',
+    'R6-01': 'rule-vrf', 'R6-02': 'rule-bgp', 'R6-03': 'rule-acl',
+    'R6-04': 'rule-ipsec', 'R6-05': 'rule-stamp'
+  };
+
+  function fieldFromPath(path) {
+    if (!path || path === '-') return '';
+    var segs = path.split('/');
+    var last = segs[segs.length - 1];
+    return last.split('[')[0].split(':').pop();
+  }
+
+  function renderTraceEntry(entry) {
+    var srcLeaf = fieldFromPath(entry.source);
+    var tgtLeaf = fieldFromPath(entry.target);
+    var map = TRACE_FIELD_MAP[srcLeaf] || TRACE_FIELD_MAP[tgtLeaf] || {};
+    var srcField = map.src || srcLeaf;
+    var tgtFields = map.tgt || [];
+    var ruleRowId = RULE_ID_MAP[entry.rule_id];
+    var kind = (entry.op === 'DERIVE' || entry.op === 'D' || entry.op === 'D(*)') ? 'derive'
+      : entry.op === 'SPLIT' ? 'split'
+      : (entry.op === 'DROP' || entry.op === 'N/DROP') ? 'none' : 'copy';
+    var num = entry.batch === '#7' ? 1 : entry.batch === '#8' ? 2 : 3;
+
+    /* 源字段高亮 */
+    var srcEl = document.querySelector('.seg-body [data-field="' + srcField + '"]');
+    if (srcEl) {
+      var srcWrap = srcEl.closest('.field') || srcEl;
+      srcWrap.classList.remove('derived');
+      srcWrap.classList.add('changed');
+      setBadge(srcWrap, 1, 'copy');
+      flashEl(srcWrap, false);
+    }
+
+    /* 右栏规则行脉冲 */
+    var ruleRow = document.getElementById(ruleRowId);
+    if (ruleRow) {
+      ruleRow.classList.remove('hl-flash');
+      void ruleRow.offsetWidth;
+      ruleRow.classList.add('hl-flash');
+      if (kind === 'derive') ruleRow.classList.add('derive');
+      else if (kind === 'copy' || kind === 'split') ruleRow.classList.add('copy');
+    }
+
+    /* 中栏目标字段高亮 */
+    var firstTarget = null;
+    tgtFields.forEach(function (tf) {
+      document.querySelectorAll('[data-field="' + tf + '"]').forEach(function (el) {
+        activatePaneFor(el);
+        el.classList.remove('changed', 'derived');
+        el.classList.add(kind === 'derive' ? 'derived' : 'changed');
+        setBadge(el, num, kind);
+        flashEl(el, false);
+        if (!firstTarget) firstTarget = el;
+      });
+    });
+
+    /* 台账 */
+    var batchNo = parseInt(entry.batch.replace('#', ''), 10) || 7;
+    var srcTxt = entry.rule_id + ' · ' + (RULE_SRC[ruleRowId] || entry.note || '');
+    var val = (entry.value === null || entry.value === undefined) ? '' : JSON.stringify(entry.value);
+    appendLedger(entry.rule_id, val, batchNo, num, srcTxt, kind);
+  }
+
+  function handleWSMessage(msg) {
+    if (msg.type === 'mapping_start') {
+      var respEl = document.getElementById('mResp');
+      respEl.textContent = '计算中…';
+      respEl.classList.remove('ok');
+      respEl.classList.add('busy');
+      document.querySelector('.metrics-bar').classList.add('computing');
+    } else if (msg.type === 'trace') {
+      renderTraceEntry(msg.entry);
+    } else if (msg.type === 'mapping_done') {
+      var respEl = document.getElementById('mResp');
+      respEl.textContent = '真实引擎';
+      respEl.classList.remove('busy');
+      respEl.classList.add('ok');
+      document.querySelector('.metrics-bar').classList.remove('computing');
+      var m = msg.metrics || {};
+      var cov = document.getElementById('mCoverage');
+      var diff = document.getElementById('mDiff');
+      var trc = document.getElementById('mTrace');
+      if (cov) cov.textContent = Math.round((m.coverage_rate || 0) * 100) + '%';
+      if (diff) diff.textContent = '=' + (m.roundtrip_diff === 0 ? '0' : m.roundtrip_diff);
+      if (trc) trc.textContent = Math.round((m.traceability_rate || 0) * 100) + '%';
+      wsBusy = false;
+    }
+  }
+
+  function connectWS() {
+    var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    var host = location.hostname || 'localhost';
+    try {
+      ws = new WebSocket(proto + '://' + host + ':' + WS_PORT + '/ws/trace');
+      ws.onopen = function () {
+        wsConnected = true;
+        toast('已连接真实映射引擎（WebSocket :' + WS_PORT + '）');
+        triggerRealMapping();
+      };
+      ws.onmessage = function (ev) {
+        try { handleWSMessage(JSON.parse(ev.data)); } catch (e) { /* ignore */ }
+      };
+      ws.onclose = function () {
+        wsConnected = false;
+        toast('引擎连接断开，已降级为模拟引擎');
+      };
+      ws.onerror = function () { wsConnected = false; };
+    } catch (e) {
+      wsConnected = false;
+    }
+  }
+
+  /* 与后端 engine/cli.py L3SM_TC 一致的输入实例 */
+  var BUILTIN_L3SM = {"ietf-l3vpn-svc:l3vpn-svc":{"vpn-profiles":{"valid-provider-identifiers":{"cloud-identifier":[{"id":"CLOUD-1"}],"qos-profile-identifier":[{"id":"QOS-PROF-1"}]},"ietf-l3vpn-svc-dynamic-ext:maximum-adjustment-profiles":{"maximum-adjustment-profile":[{"id":"MAP-1","max-bandwidth":"1000000000","max-latency":50}]},"ietf-l3vpn-svc-dynamic-ext:slo-sle-profiles":{"slo-sle-profile":[{"id":"SLO-1","latency":20,"jitter":5,"packet-loss":10}]}},"vpn-services":{"vpn-service":[{"vpn-id":"VPN1","vpn-name":"Enterprise VPN","vpn-description":"Primary enterprise VPN","customer-name":"ACME Corp","vpn-type":"ietf-l3vpn-svc:l3vpn","vpn-service-topology":"ietf-l3vpn-svc:any-to-any","cloud-accesses":{"cloud-access":[{"cloud-access-id":"CA1","cloud-provider":"alibaba","cloud-identifier":"CLOUD-1"}]},"sites":{"site":[{"site-id":"SITE1","site-name":"HQ","site-role":"ietf-l3vpn-svc:hub-role","locations":{"location":[{"location-id":"LOC1","address":"Beijing","latitude":"39.9","longitude":"116.4"}]},"devices":{"device":[{"device-id":"CE1","location":"LOC1"}]},"management":"ietf-l3vpn-svc:provider-managed","site-diversity":{"diversity-groups":{"group":[{"group-id":"DG1"}]}},"ietf-l3vpn-svc-dynamic-ext:temporary-connection-indicator":false,"ietf-l3vpn-svc-dynamic-ext:service":{"qos":{"qos-profile":{"slo-sle-profile":"SLO-1"}}},"site-network-accesses":{"site-network-access":[{"site-network-access-id":"ACC1","site-network-access-type":"ietf-l3vpn-svc:point-to-point","ip-connection":{"ipv4":{"addresses":{"address":[{"address-id":"a1","address":"10.0.0.1","prefix-length":24}]}},"ipv6":{"addresses":{"address":[{"address-id":"a6","address":"2001:db8::1","prefix-length":64}]}}},"routing-protocols":{"routing-protocol":[{"type":"ietf-l3vpn-svc:bgp","bgp":{"autonomous-system":65000,"address-family":"ietf-l3vpn-svc:ipv4"}},{"type":"ietf-l3vpn-svc:static","static":{"prefix":"192.168.1.0/24"}}]},"service":{"svc-input-bandwidth":"100000000","svc-output-bandwidth":"200000000","mtu":1500,"qos":{"qos-profile":{"qos-profile-id":"QOS-PROF-1","custom":{"class":[{"class-id":"C1","rate":"50000000","isolation":["C2"]}]}}},"security":{"encryption":{"encryption-profile-id":"EP1"}}},"ietf-l3vpn-svc-dynamic-ext:service":{"dynamic-l3vpn":{"dynamic-l3vpn-id":"DL3VPN-1","adjustment-mode":"automatic"},"classification-policy":[{"rule-id":"R1","match-flow":{"dscp":46},"target-class-id":"EF","target-sites":["SITE2"]}],"qos":{"qos-profile":{"slo-sle-profile":"SLO-1"}}},"ietf-l3vpn-svc-dynamic-ext:ip-connection-security":{"security-policy-id":"SP1","allowed-ipv4-prefixes":["10.0.0.0/8"]}}]}},{"site-id":"SITE2","site-name":"Branch","site-role":"ietf-l3vpn-svc:spoke-role","site-network-accesses":{"site-network-access":[{"site-network-access-id":"ACC2","site-network-access-type":"ietf-l3vpn-svc:multipoint","ip-connection":{"ipv4":{"addresses":{"address":[{"address-id":"a1","address":"10.0.1.1","prefix-length":24}]}}},"routing-protocols":{"routing-protocol":[{"type":"ietf-l3vpn-svc:ospf","ospf":{"address-family":"ietf-l3vpn-svc:ipv4","area":"0.0.0.0"}}]},"service":{"svc-input-bandwidth":"50000000","svc-output-bandwidth":"100000000","mtu":1400}}]}}]}}]}}};
+
+  function triggerRealMapping() {
+    if (wsBusy || !wsConnected) return;
+    wsBusy = true;
+    var proto = location.protocol === 'https:' ? 'https' : 'http';
+    var host = location.hostname || 'localhost';
+    fetch(proto + '://' + host + ':' + WS_PORT + '/api/map', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ l3sm: BUILTIN_L3SM })
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res.ok) { wsBusy = false; toast('映射失败：' + (res.error || 'unknown')); }
+    }).catch(function () { wsBusy = false; });
+  }
+
+  /* ================= 研究人员扩展：draft 上传 / 模型特征 / 映射定义 ================= */
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function featureTreeHtml(features, depth) {
+    depth = depth || 0;
+    var pad = new Array(depth * 2 + 1).join('&nbsp;');
+    var html = '';
+    if (depth === 0) {
+      html += '<div class="ft-module">' + escHtml(features.name || 'module') +
+        (features.revision ? ' <span class="ft-type">@' + escHtml(features.revision) + '</span>' : '') + '</div>';
+    }
+    (features.children || []).forEach(function (node) {
+      var cls = node.kind === 'augment' ? 'ft-augment'
+        : node.kind === 'container' ? 'ft-container'
+        : node.kind === 'list' ? 'ft-list' : 'ft-leaf';
+      var icon = node.kind === 'augment' ? '⊕ ' : node.kind === 'container' ? '▣ ' : node.kind === 'list' ? '▤ ' : '· ';
+      html += '<div>' + pad + '<span class="' + cls + '">' + icon + escHtml(node.name) + '</span>' +
+        (node.type ? ' <span class="ft-type">' + escHtml(node.type) + '</span>' : '') +
+        (node.description ? ' <span class="ft-desc">— ' + escHtml(node.description) + '</span>' : '') + '</div>';
+      if (node.children && node.children.length) {
+        html += '<div style="display:none" class="ft-sub">' + featureTreeHtml(node, depth + 1) + '</div>';
+      }
+    });
+    return html || '<div class="ft-empty">（无参数项）</div>';
+  }
+
+  function renderFeatureTree(container, features) {
+    container.innerHTML = featureTreeHtml(features || {}, 0);
+  }
+
+  function countFeatures(features) {
+    var n = 0;
+    (features.children || []).forEach(function walk(node) {
+      n += 1;
+      if (node.children) node.children.forEach(walk);
+    });
+    return n;
+  }
+
+  function loadModels() {
+    var proto = location.protocol === 'https:' ? 'https' : 'http';
+    var host = location.hostname || 'localhost';
+    fetch(proto + '://' + host + ':' + WS_PORT + '/api/models')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var layers = data.layers || {};
+        Object.keys(layers).forEach(function (layer) {
+          var info = layers[layer];
+          var details = document.querySelector('.model-features[data-features="' + layer + '"]');
+          if (details) {
+            var tree = details.querySelector('.feature-tree');
+            var cnt = details.querySelector('.feat-count');
+            renderFeatureTree(tree, info.features || {});
+            if (cnt) cnt.textContent = countFeatures(info.features || {}) + ' 个参数项';
+          }
+          var box = document.querySelector('.draft-box[data-layer="' + layer + '"]');
+          if (box) {
+            var st = box.querySelector('.draft-status');
+            if (st) st.innerHTML = '当前: <b>' + escHtml(info.draft || '—') + '</b>';
+          }
+        });
+      })
+      .catch(function () { /* 后端不可用：保持默认展示 */ });
+  }
+
+  function uploadDraft(box) {
+    var layer = box.dataset.layer;
+    var nameInput = box.querySelector('.draft-name');
+    var fileInput = box.querySelector('.draft-file');
+    var btn = box.querySelector('.draft-upload-btn');
+    var st = box.querySelector('.draft-status');
+    var errEl = box.querySelector('.draft-err');
+    if (errEl) errEl.remove();
+    var draftName = (nameInput.value || '').trim();
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) { toast('请先选择 .yang 文件'); return; }
+    if (!draftName) { toast('请先填写 draft 名称'); return; }
+
+    var fd = new FormData();
+    fd.append('layer', layer);
+    fd.append('draft_name', draftName);
+    fd.append('file', file);
+
+    btn.disabled = true;
+    btn.textContent = '上传中…';
+    var proto = location.protocol === 'https:' ? 'https' : 'http';
+    var host = location.hostname || 'localhost';
+    fetch(proto + '://' + host + ':' + WS_PORT + '/api/draft/upload', { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        btn.disabled = false;
+        btn.textContent = '上传 YANG draft';
+        if (!res.ok) {
+          toast('上传失败：' + (res.error || 'unknown'));
+          var e = document.createElement('div');
+          e.className = 'draft-err';
+          e.textContent = '✗ ' + (res.error || '上传失败');
+          box.appendChild(e);
+          return;
+        }
+        toast('draft 已激活：' + res.module + '（模型库 ' + res.library_modules + ' 个模块）');
+        if (st) st.innerHTML = '当前: <b>' + escHtml(res.module) + '</b>';
+        // 更新中栏特征树
+        var details = document.querySelector('.model-features[data-features="' + layer + '"]');
+        if (details) {
+          var tree = details.querySelector('.feature-tree');
+          var cnt = details.querySelector('.feat-count');
+          renderFeatureTree(tree, res.features || {});
+          if (cnt) cnt.textContent = countFeatures(res.features || {}) + ' 个参数项';
+        }
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        btn.textContent = '上传 YANG draft';
+        toast('上传请求失败：' + e.message);
+      });
+  }
+
+  function collectMappingRows() {
+    var rows = [];
+    document.querySelectorAll('.md-table tbody tr').forEach(function (tr) {
+      var cells = tr.querySelectorAll('input, select');
+      if (cells.length < 4) return;
+      var source = cells[1].value.trim();
+      var target = cells[2].value.trim();
+      if (!source && !target) return;
+      rows.push({
+        id: cells[0].value.trim() || '',
+        source: source,
+        target: target,
+        op: cells[3].value,
+        note: cells[4].value.trim()
+      });
+    });
+    return rows;
+  }
+
+  function defineMapping() {
+    var btn = document.querySelector('.md-submit');
+    var resultEl = document.querySelector('.md-result');
+    var mode = document.querySelector('.md-tabs button.on').dataset.md;
+    var payload = { mode: mode };
+    if (mode === 'text') {
+      payload.text = document.querySelector('.md-text').value;
+    } else {
+      payload.rows = collectMappingRows();
+    }
+    btn.disabled = true;
+    btn.textContent = '提交中…';
+    var proto = location.protocol === 'https:' ? 'https' : 'http';
+    var host = location.hostname || 'localhost';
+    fetch(proto + '://' + host + ':' + WS_PORT + '/api/mapping/define', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = '提交映射定义';
+      if (!res.ok) {
+        resultEl.innerHTML = '<span class="err">✗ ' + escHtml(res.error || '失败') + '</span>';
+        return;
+      }
+      var html = '<span class="ok">✓ 已注册 ' + res.total + ' 条映射规则</span>';
+      (res.parsed || []).forEach(function (r) {
+        html += '<span class="rule-line">' + escHtml(r.id) + ' · ' + escHtml(r.source) + ' → ' +
+          escHtml(r.target) + ' (' + escHtml(r.op) + ')' + (r.note ? ' · ' + escHtml(r.note) : '') + '</span>';
+      });
+      if (res.invalid && res.invalid.length) {
+        html += '<span class="err">⚠ ' + res.invalid.length + ' 条未解析</span>';
+      }
+      resultEl.innerHTML = html;
+      toast('映射定义已提交，下次映射自动生效');
+    }).catch(function (e) {
+      btn.disabled = false;
+      btn.textContent = '提交映射定义';
+      resultEl.innerHTML = '<span class="err">✗ 请求失败：' + escHtml(e.message) + '</span>';
+    });
+  }
+
+  // 表格模式：添加/删除行
+  function addMappingRow() {
+    var tbody = document.querySelector('.md-table tbody');
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input class="md-id" placeholder="R7.x-xx"></td>' +
+      '<td><input class="md-src" placeholder="l3sm:.../..."></td>' +
+      '<td><input class="md-tgt" placeholder="l3nm:.../... 或 -"></td>' +
+      '<td><select class="md-op"><option>COPY</option><option>DROP</option><option>DERIVE</option></select></td>' +
+      '<td><input class="md-note" placeholder="说明（可选）"></td>' +
+      '<td><button class="md-del" title="删除">✕</button></td>';
+    tbody.appendChild(tr);
+  }
+
+  document.querySelector('.md-add-row').addEventListener('click', addMappingRow);
+  document.querySelector('.md-table tbody').addEventListener('click', function (e) {
+    if (e.target.classList.contains('md-del')) e.target.closest('tr').remove();
+  });
+  document.querySelector('.md-submit').addEventListener('click', defineMapping);
+  document.querySelectorAll('.md-tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.md-tabs button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      var mode = btn.dataset.md;
+      document.querySelectorAll('.md-pane').forEach(function (pane) {
+        pane.hidden = pane.dataset.mdPane !== mode;
+      });
+    });
+  });
+  // 左栏 draft 上传
+  document.querySelectorAll('.draft-box').forEach(function (box) {
+    var btn = box.querySelector('.draft-upload-btn');
+    var fileInput = box.querySelector('.draft-file');
+    btn.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () { uploadDraft(box); });
+  });
+
+  loadModels();
+
+  connectWS();
+})();
+</script>
+
+<script>
+/* ============================================================
+   i18n 双语支持（中文/English toggle）· 后加模块
+   - 顶栏 EN / 中文 按钮切换整个页面语言
+   - localStorage 记忆选择；URL ?lang=en / ?lang=zh 可预设
+   - 动态生成的文案（toast / 台账 / 上传状态等）由 MutationObserver 自动翻译
+   ============================================================ */
+(function () {
+  'use strict';
+  var TITLE_ZH = '三层模型映射实验室 · 页面一（三栏联动映射实验室）';
+  var TITLE_EN = 'L3VPN Model Mapping Lab · Page 1 (three-column linked mapping lab)';
+  var RE_ZH = /[\u4e00-\u9fa5]/;
+
+  /* ---- 翻译字典（key 为 trim 后的原文，value 为英文） ---- */
+  var DICT = {
+    /* 顶栏 & 指标看板 */
+    '三层模型映射实验室': 'L3VPN Model Mapping Lab',
+    '跟随模式': 'Follow',
+    '覆盖率': 'Coverage', '（字段映射覆盖）': '(field mapping coverage)',
+    '往返 diff': 'Round-trip diff', '（无损校验）': '(lossless check)',
+    '溯源': 'Traceability', '（规则出处可查）': '(rule provenance)',
+    '联动响应': 'Linked response', '（输入→三栏高亮）': '(input → 3-column highlight)',
+    '引擎实时': 'engine live',
+    /* 左栏导航 */
+    '系统链路导航': 'System Chain Navigation',
+    'L3SM 表单': 'L3SM form',
+    '● 活跃（输入中）': '● active (input)',
+    '上传 YANG draft': 'Upload YANG draft',
+    '当前:': 'Current:',
+    'L3NM 生成': 'L3NM generation',
+    '设备模型 OpenConfig': 'device model OpenConfig',
+    '增量 / 冲突检测': 'delta / conflict detection',
+    '页面二激活': 'enabled on page 2',
+    'NETCONF 下发': 'NETCONF push',
+    '○ 待第二步解锁': '○ unlocked at step 2',
+    '点击模块 = 聚焦中栏对应段': 'click a module = focus its middle segment',
+    '状态灯 = 最近一次交互位置': 'status light = last interaction point',
+    '页面二入口 →': 'page 2 entry →',
+    /* 段 A · L3SM 表单 */
+    'A · L3SM 客户表单（RFC 8299 + ietf-l3vpn-svc-ext）': 'A · L3SM customer form (RFC 8299 + ietf-l3vpn-svc-ext)',
+    '必填项 5/9': 'required 5/9',
+    '业务模型特征（YANG 解析）·': 'service model features (YANG-parsed) ·',
+    '加载中…': 'loading…',
+    '经典内容': 'Classic', '增强内容': 'Enhanced',
+    '经典内容 · RFC 8299 基础字段': 'Classic · RFC 8299 base fields',
+    '（YANG 驱动生成 · pyang 编译 · yangson 校验）': '(YANG-driven · compiled by pyang · validated by yangson)',
+    '完整字段（折叠区 · 由 YANG 树自动生成）': 'Full fields (collapsed · generated from the YANG tree)',
+    '增强内容 · ietf-l3vpn-svc-ext': 'Enhanced · ietf-l3vpn-svc-ext',
+    '（draft-fu-onsen-update-l3sm-service-models-03 · 向后兼容 RFC 8299）': '(draft-fu-onsen-update-l3sm-service-models-03 · backward compatible with RFC 8299)',
+    '增强': 'Ext.',
+    '① dynamic-l3vpn · 动态组网（dynamic-networking）': '① dynamic-l3vpn · dynamic VPN networking',
+    '§6.2 · 按需建立/释放 VPN 隧道': '§6.2 · on-demand VPN tunnel setup/teardown',
+    'period-start（留空=立即生效）': 'period-start (empty = effective immediately)',
+    'duration（服务存活时长）': 'duration (service lifetime)',
+    'recurrence（iCalendar 规则）': 'recurrence (iCalendar rule)',
+    '② dynamic-l3vpn · 动态带宽调整（dynamic-bandwidth-adjustment）': '② dynamic-l3vpn · dynamic bandwidth adjustment',
+    '§6.3 · 基线带宽之上临时扩容': '§6.3 · temporary boost above the baseline bandwidth',
+    '③ qos 增强 · 网络切片隔离 + 统一流分类': '③ qos ext · network-slice isolation + unified traffic classification',
+    '§6.4 · classification-policy 可跨模块复用': '§6.4 · classification-policy reusable across modules',
+    'target-class-id（供 qos/security 复用）': 'target-class-id (reused by qos/security)',
+    'isolation（网络切片）': 'isolation (network slice)',
+    '④ oam / perf-mon · 端到端性能监控': '④ oam / perf-mon · end-to-end performance monitoring',
+    '§6.5 · 以目标站点为键上报指标': '§6.5 · metrics reported keyed by target site',
+    '⑤ security 增强 · 抗量子加密（PQC / QKD）': '⑤ security ext · post-quantum encryption (PQC / QKD)',
+    '§6.6 · 按 class-id 细粒度加密': '§6.6 · fine-grained encryption per class-id',
+    'algorithm（经典加密）': 'algorithm (classical crypto)',
+    '经典字段由 pyang 编译 RFC 8299 YANG 树自动生成 · 增强字段来自 ietf-l3vpn-svc-ext（draft-fu-03）· 校验由 yangson 执行 · 模拟引擎：字段变更 → 整批脉冲 + 台账追加 ·': 'Classic fields auto-generated from the RFC 8299 YANG tree by pyang · enhanced fields from ietf-l3vpn-svc-ext (draft-fu-03) · validation by yangson · sim engine: field change → batch pulse + ledger append ·',
+    '[TODO] 真实引擎接入：WebSocket trace 推送': '[TODO] real engine hookup: WebSocket trace push',
+    /* 段 B · L3NM 数据 */
+    'B · L3NM 网络模型数据（RFC 9182 + ietf-l3vpn-ntw-ext）': 'B · L3NM network model data (RFC 9182 + ietf-l3vpn-ntw-ext)',
+    '网络模型特征（YANG 解析）·': 'network model features (YANG-parsed) ·',
+    '经典内容 · RFC 9182 基础数据': 'Classic · RFC 9182 base data',
+    '（网络侧视图 · vpn-node / vpn-network-access）': '(network-side view · vpn-node / vpn-network-access)',
+    '增强内容 · ietf-l3vpn-ntw-ext': 'Enhanced · ietf-l3vpn-ntw-ext',
+    '（draft-huang-onsen-update-l3nm-network-models-00 · 镜像 L3SM 增强能力）': '(draft-huang-onsen-update-l3nm-network-models-00 · mirrors the L3SM enhancements)',
+    '{perf-mon}? ← 增强': '{perf-mon}? ← ext',
+    '← 增强（统一流分类）': '← ext (unified classification)',
+    '{dynamic-l3vpn}? ← 增强': '{dynamic-l3vpn}? ← ext',
+    '← 增强（网络切片）': '← ext (network slicing)',
+    '← 增强（PQC/QKD）': '← ext (PQC/QKD)',
+    '经典数据来自 RFC 9182 · 增强数据来自 ietf-l3vpn-ntw-ext（draft-huang-00，与 L3SM 增强一一对应）· 双视图：JSON 实例 / YANG tree · 编号可反查 · 模拟引擎：整批脉冲 + 因果编号 ·': 'Classic data from RFC 9182 · enhanced data from ietf-l3vpn-ntw-ext (draft-huang-00, one-to-one with the L3SM enhancements) · dual view: JSON instance / YANG tree · badges trace back · sim engine: batch pulse + causal numbering ·',
+    /* 段 C · 设备模型 */
+    'C · 设备模型参数（OpenConfig）': 'C · device model parameters (OpenConfig)',
+    '设备模型特征（YANG 解析）·': 'device model features (YANG-parsed) ·',
+    '同样自动跳转 + 高亮 · 按 PE 分设备多份（SPLIT 展开示例：pe1/pe2/pe3 选项卡）· 模拟引擎：SPLIT 分发 + 未读角标 ·': 'same auto-jump + highlight · one pane per PE (SPLIT example: pe1/pe2/pe3 tabs) · sim engine: SPLIT dispatch + unread badges ·',
+    '[TODO] 真实引擎接入：SPLIT 分发 + 未读角标': '[TODO] real engine hookup: SPLIT dispatch + unread badges',
+    /* 右栏 · 映射定义 */
+    '映射关系定义（研究人员）': 'Mapping Definition (researcher)',
+    '跨层级：业务 → 网络 → 设备': 'cross-layer: service → network → device',
+    'draft 文本': 'draft text', '表格': 'table',
+    '源字段': 'source field', '目标字段': 'target field', '操作': 'op', '说明': 'note',
+    '+ 添加行': '+ add row',
+    '提交映射定义': 'Submit mapping definition',
+    '映射关系总表（增强 L3SM → 增强 L3NM → 设备）▾ 展开': 'Full mapping table (enhanced L3SM → enhanced L3NM → device) ▾ expand',
+    /* 右栏 · 面板一 L3SM→L3NM 规则行 */
+    'L3SM → L3NM 映射': 'L3SM → L3NM mapping',
+    'COPY · §5.1 · 全链路关联键': 'COPY · §5.1 · end-to-end correlation key',
+    'COPY · §5.1 · RT 构造见 §5.4': 'COPY · §5.1 · RT construction in §5.4',
+    'customer-name → —（无对应）': 'customer-name → — (no counterpart)',
+    'N · §5.1 · 良性丢弃，OSS 按 vpn-id 关联': 'N · §5.1 · benign drop; OSS correlates by vpn-id',
+    'site-id → vpn-node-id（并入命名方案）': 'site-id → vpn-node-id (into the naming scheme)',
+    'DERIVE · §5.2 · 站点→PE 非一对一': 'DERIVE · §5.2 · site→PE is not 1:1',
+    'COPY · §5.2 · 干净的直接映射': 'COPY · §5.2 · clean direct mapping',
+    'site-network-access-id → id（命名方案内）': 'site-network-access-id → id (within the naming scheme)',
+    'COPY · §5.3 · 客户/运营商地址': 'COPY · §5.3 · customer/provider addresses',
+    'svc-input/output-bandwidth → qos 带宽': 'svc-input/output-bandwidth → qos bandwidth',
+    'DERIVE · §5.3 · 方向互换 input→ce-to-pe': 'DERIVE · §5.3 · direction swap input→ce-to-pe',
+    'COPY · §5.3 · 下钻校验点': 'COPY · §5.3 · drill-down check point',
+    'DERIVE · §5.4 · 按 vpn-node 分配（Gap G1）': 'DERIVE · §5.4 · allocated per vpn-node (Gap G1)',
+    '∅ → route-targets（拓扑→RT 计划）': '∅ → route-targets (topology→RT plan)',
+    'DERIVE · §5.4 · any-to-any 单 RT / hub-spoke 双 RT': 'DERIVE · §5.4 · any-to-any single RT / hub-spoke dual RT',
+    '∅ → ne-id（PE 选择）': '∅ → ne-id (PE selection)',
+    'DERIVE · §5.4 · 位置/承载/容量/多样性': 'DERIVE · §5.4 · location/bearer/capacity/diversity',
+    'dynamic-l3vpn（组网/带宽）→ dynamic-l3vpn': 'dynamic-l3vpn (networking/bandwidth) → dynamic-l3vpn',
+    'COPY · §5.5 · 方向互换 + schedule 原样': 'COPY · §5.5 · direction swap + schedule as-is',
+    'classification-policy site → vpn-node 展开': 'classification-policy site → vpn-node expansion',
+    'D/R · §5.5 · target-sites 展开为 vpn-node 规则': 'D/R · §5.5 · target-sites expanded into vpn-node rules',
+    'D/R · §5.5 · 站点→服务节点解析': 'D/R · §5.5 · site→service-node resolution',
+    'security classes → classes（class-id 一致）': 'security classes → classes (class-id identical)',
+    'COPY · §5.5 · PQC/QKD 子树原样': 'COPY · §5.5 · PQC/QKD subtree as-is',
+    '点击行 = 反查中栏源/目标字段 · 精选 17 条（完整表见项目仓库）': 'click a row = trace back to the middle column source/target · 17 selected (full table in the project repo)',
+    /* 右栏 · 面板二 L3NM→设备 规则行 */
+    'L3NM → 设备模型映射': 'L3NM → device model mapping',
+    'COPY · §6 · RFC 8529 · 最成熟环节': 'COPY · §6 · RFC 8529 · most mature link',
+    'vpn-network-access/connection → ietf-interfaces 子接口': 'vpn-network-access/connection → ietf-interfaces sub-interface',
+    'COPY · §6 · RFC 8343 · 绑定 VRF': 'COPY · §6 · RFC 8343 · bound to VRF',
+    'connection/ip-connection → ietf-ip 地址': 'connection/ip-connection → ietf-ip addresses',
+    'routing-protocols/bgp → ietf-bgp VRF 邻居': 'routing-protocols/bgp → ietf-bgp VRF neighbors',
+    'COPY · §6 · Gap G5（模型在研）': 'COPY · §6 · Gap G5 (model in progress)',
+    'routing-protocols/static → ietf-routing 静态路由': 'routing-protocols/static → ietf-routing static routes',
+    'qos profiles → —（无标准设备模型）': 'qos profiles → — (no standard device model)',
+    'N · §6 · Gap G4 · 厂商私有': 'N · §6 · Gap G4 · vendor-proprietary',
+    'DERIVE · §6 · Gap G6（模型在研）': 'DERIVE · §6 · Gap G6 (model in progress)',
+    'networking/bandwidth schedule → —（控制器调度）': 'networking/bandwidth schedule → — (controller scheduling)',
+    'N · §6 · Gap G8 · 控制器充当调度器': 'N · §6 · Gap G8 · controller acts as the scheduler',
+    'COPY · §6 · RFC 8519 · 继承规则顺序': 'COPY · §6 · RFC 8519 · inherits rule order',
+    'qos-action isolation → Slice/NRP 绑定': 'qos-action isolation → Slice/NRP binding',
+    'DERIVE · §6 · SR Policy + 队列分区': 'DERIVE · §6 · SR Policy + queue partitioning',
+    'perf-mon → STAMP 会话 + YANG-Push 上报': 'perf-mon → STAMP sessions + YANG-Push reporting',
+    'D/R · §6 · 唯一部分标准化路径': 'D/R · §6 · the only partially standardized path',
+    'security classes → IPsec/IKE 设备模型': 'security classes → IPsec/IKE device models',
+    'DERIVE · §6 · RFC 9370 多密钥交换': 'DERIVE · §6 · RFC 9370 multi key-exchange',
+    'post-quantum-encryption → —（无标准模型）': 'post-quantum-encryption → — (no standard model)',
+    'N · §6 · Gap G9 · QKD 接口为 ETSI REST': 'N · §6 · Gap G9 · QKD interface is ETSI REST',
+    '点击行 = 反查中栏源/目标字段 · 精选 15 条（完整表见项目仓库）': 'click a row = trace back to the middle column source/target · 15 selected (full table in the project repo)',
+    /* 图例 */
+    '橙 = 本批变更（COPY ①）': 'orange = changed in this batch (COPY ①)',
+    '绿 = DERIVE 生成（②）': 'green = DERIVE-generated (②)',
+    '③ = SPLIT 多设备分发（pe1/pe2/pe3）': '③ = SPLIT dispatch across devices (pe1/pe2/pe3)',
+    '跟随模式 ON：变更自动跳转 + 整批脉冲': 'follow mode ON: auto-jump to changes + batch pulse',
+    '规则行 / 编号徽标可点击反查（双向）': 'rule rows / badges are clickable for trace-back (bidirectional)',
+    /* 变更台账 */
+    '变更台账（本会话': 'change ledger (this session:',
+    '条 · 可回放核对）': 'entries · replayable)',
+    '模拟引擎实时追加 · [TODO] 真实引擎接入': 'appended live by the sim engine · [TODO] real engine hookup',
+    '时间': 'time', '字段': 'field', '值': 'value', '批次': 'batch', '编号': 'no.', '规则出处': 'rule source',
+    '批 #7': 'Batch #7',
+    '§5.4 拓扑→RT 计划': '§5.4 topology→RT plan',
+    'SPLIT · §6 按设备分发': 'SPLIT · §6 dispatched per device',
+    'interface（pe1/pe2/pe3）': 'interface (pe1/pe2/pe3)',
+    '65100:100（both）': '65100:100 (both)',
+    /* 映射关系总表 */
+    '映射关系总表（增强 L3SM → 增强 L3NM → 设备模型）': 'Full mapping table (enhanced L3SM → enhanced L3NM → device model)',
+    'draft-huang-onsen-l3vpn-model-mapping-01 · §5.5 + §6 · 点击展开/收起': 'draft-huang-onsen-l3vpn-model-mapping-01 · §5.5 + §6 · click to expand/collapse',
+    '来源：draft-huang-onsen-l3vpn-model-mapping-01': 'source: draft-huang-onsen-l3vpn-model-mapping-01',
+    '§5.5 增强 L3SM→L3NM 扩展映射 · §6 L3NM→设备模型落点': '§5.5 enhanced L3SM→L3NM mapping · §6 L3NM→device-model touchpoints',
+    '模块：ietf-l3vpn-svc-dynamic-ext（draft-fu-03）↔ ietf-l3vpn-ntw-ext（draft-huang-00）': 'modules: ietf-l3vpn-svc-dynamic-ext (draft-fu-03) ↔ ietf-l3vpn-ntw-ext (draft-huang-00)',
+    '直接映射（COPY，语义等价）': 'direct (COPY, semantically equivalent)',
+    '派生（DERIVE，需编排器/控制器计算分配）': 'derived (DERIVE, computed/allocated by the orchestrator/controller)',
+    '无对应（丢弃或留在上层系统）': 'no counterpart (dropped or kept in the upper-layer system)',
+    '混合（部分直接、部分派生）': 'mixed (partly direct, partly derived)',
+    '直接但有前提（按角色/需先注册）': 'direct with preconditions (per role / prior registration)',
+    '表 1 · 增强 L3SM → 增强 L3NM 映射': 'Table 1 · enhanced L3SM → enhanced L3NM mapping',
+    '增强 L3SM 节点': 'enhanced L3SM node', '增强 L3NM 节点': 'enhanced L3NM node',
+    '类型': 'type',
+    'bandwidth-adjustment、provisioning-latency、perf-mon profile 标识': 'bandwidth-adjustment, provisioning-latency, perf-mon profile identifiers',
+    'bandwidth-adjustment、provisioning-delay、perf-mon profile 标识': 'bandwidth-adjustment, provisioning-delay, perf-mon profile identifiers',
+    '按角色映射而非按名称：服务层 provisioning-latency ↔ 网络层 provisioning-delay，语义一致、名称略异；未来修订对齐名称即可变为名称保持映射。': 'Mapped by role rather than by name: service-layer provisioning-latency ↔ network-layer provisioning-delay — same semantics, slightly different names; a future revision aligning the names turns this into a name-preserving mapping.',
+    'schedule 子树（RFC 9922 分组）原样翻译；dynamic-networking 与 dynamic-bandwidth-adjustment 互斥约束在两层保持一致。': 'The schedule subtree (RFC 9922 grouping) is translated as-is; the mutual-exclusion constraint between dynamic-networking and dynamic-bandwidth-adjustment stays consistent across both layers.',
+    '方向互换': 'direction swap',
+    '：input→ce-to-pe、output→pe-to-ce（客户视角 vs 网络视角）；临时值为绝对值而非增量；schedule 原样。': ': input→ce-to-pe, output→pe-to-ce (customer vs network perspective); temporary values are absolute, not deltas; schedule as-is.',
+    '只读，': 'read-only, ',
+    '向上流动': 'flows upward',
+    '：控制器在激活/去激活时填 L3NM，编排器再暴露到 L3SM 供客户校验 provisioning-delay SLO。': ': the controller fills them in L3NM on activation/deactivation; the orchestrator then exposes them in L3SM so the customer can verify the provisioning-delay SLO.',
+    'classification-policy（site 级，含 target-sites）': 'classification-policy (site level, with target-sites)',
+    'classification-policy（vpn-node 级）': 'classification-policy (vpn-node level)',
+    '匹配条件（dscp、dot1p、协议字段、IP 前缀、L4 端口、match-application）与 target-class-id 原样翻译；': 'Match conditions (dscp, dot1p, protocol fields, IP prefixes, L4 ports, match-application) and target-class-id are translated as-is; ',
+    '派生在作用域': 'derivation in scope',
+    '：site 级 target-sites 由编排器展开为承载这些站点的 vpn-node 规则。': ': site-level target-sites are expanded by the orchestrator into vpn-node rules hosting those sites.',
+    'classification-policy（site-network-access 级）': 'classification-policy (site-network-access level)',
+    'classification-policy（vpn-network-access 级）': 'classification-policy (vpn-network-access level)',
+    'RFC 9182 的 vpn-node→access 继承机制镜像 RFC 8299 的 site→access 继承，继承规则无需额外翻译。': "RFC 9182's vpn-node→access inheritance mirrors RFC 8299's site→access inheritance; no extra translation of inheritance rules is needed.",
+    '通过 class-id 关联：custom class 的 class-id 成为承载 isolation leaf-list 的 qos-action rule 的 target-class-id；isolation 标识与网络切片 NBI 对齐。': 'Linked via class-id: the custom class\u2019s class-id becomes the target-class-id of the qos-action rule carrying the isolation leaf-list; the isolation identifier aligns with the network-slice NBI.',
+    '键从 target-site-id 变为 target-vpn-node-id（编排器解析站点→服务节点）；双归站点按 vpn-node 聚合（聚合方法运营商定义）；测量 profile、自定义 interval（RFC 9375）、metrics 原样。': 'The key changes from target-site-id to target-vpn-node-id (the orchestrator resolves site→service node); dual-homed sites are aggregated per vpn-node (aggregation method defined by the operator); measurement profile, custom interval (RFC 9375) and metrics are kept as-is.',
+    '逐类原样翻译（含 pqc/qkd 子树）；编排器保证 class-id 命名空间跨 qos/security/perf-mon 一致；qkd-key-pool-id 跨端点（CE-PE/PE-PE/CE-CE）协调。': 'Translated per class as-is (including the pqc/qkd subtrees); the orchestrator keeps the class-id namespace consistent across qos/security/perf-mon; qkd-key-pool-id is coordinated across endpoints (CE-PE/PE-PE/CE-CE).',
+    '—（无对应）': '— (no counterpart)',
+    '引用的 provider profile 留在 OSS，翻译前解析为具体参数；加密边界（CE-to-CE vs PE-to-PE）由站点 management type 决定（该信息本身不跨层）。': 'The referenced provider profile stays in the OSS and is resolved into concrete parameters before translation; the encryption boundary (CE-to-CE vs PE-to-PE) is decided by the site management type (this information itself does not cross layers).',
+    '表 2 · 增强 L3NM → 设备模型落点': 'Table 2 · enhanced L3NM → device-model touchpoints',
+    'draft-huang-onsen-l3vpn-model-mapping-01 §6（扩展部分）': 'draft-huang-onsen-l3vpn-model-mapping-01 §6 (extension part)',
+    '设备级模型落点': 'device-level model touchpoint',
+    'ietf-schedule 分组（RFC 9922）': 'ietf-schedule grouping (RFC 9922)',
+    '无标准设备模型': 'no standard device model',
+    '调度器驻留控制器': 'the scheduler lives in the controller',
+    '控制器充当调度器：存储 schedule、在激活时刻前推送派生配置（满足 provisioning-delay SLO）、停止时刻撤回，并回填 actual-start/stop-time。增强方向：schedule-aware 激活分组。': 'The controller acts as the scheduler: it stores schedules, pushes the derived configuration before the activation instant (meeting the provisioning-delay SLO), withdraws it at the stop instant, and backfills actual-start/stop-time. Enhancement direction: schedule-aware activation grouping.',
+    '设备 QoS rate 对象（policer / shaper）': 'device QoS rate objects (policer / shaper)',
+    '无标准设备 QoS 模型（厂商私有）；增强方向：带调度速率集 + actual-bandwidth 遥测的 QoS 模型。': 'No standard device QoS model (vendor-proprietary); enhancement direction: a QoS model with scheduled rate sets + actual-bandwidth telemetry.',
+    'dscp、L4 端口、IP 前缀': 'dscp, L4 ports, IP prefixes',
+    '覆盖常见头部字段匹配；ACL 条目继承规则顺序；ACL 名/元数据保留 target-class-id，供 QoS/security 在设备上引用同一 class。': 'Covers common header-field matching; ACL entries inherit rule order; ACL name/metadata keeps target-class-id so QoS/security reference the same class on the device.',
+    '应用识别（DPI）无标准设备模型；dot1p 需 L2 标记支持。': 'Application recognition (DPI) has no standard device model; dot1p requires L2 marking support.',
+    'Slice/NRP 绑定 SR Policy + 队列资源分区': 'Slice/NRP binding via SR Policy + queue resource partitioning',
+    '与网络切片 NBI（draft-ietf-teas-ietf-network-slice-nbi-yang）对齐；设备侧厂商私有。': 'Aligned with the network-slice NBI (draft-ietf-teas-ietf-network-slice-nbi-yang); the device side is vendor-proprietary.',
+    '测量会话模型（STAMP YANG）+ YANG-Push（RFC 8639/8641）上报': 'Measurement session model (STAMP YANG) + YANG-Push (RFC 8639/8641) reporting',
+    '唯一部分标准化路径：STAMP/TWAMP 会话模型配置测量，YANG-Push 回传指标；VPN 节点对聚合由控制器派生。': 'The only partially standardized path: STAMP/TWAMP session models configure the measurement, YANG-Push reports the metrics; VPN node-pair aggregation is derived by the controller.',
+    'IPsec/IKE 设备模型（draft-ietf-ipsecme-yang-ipsec）': 'IPsec/IKE device model (draft-ietf-ipsecme-yang-ipsec)',
+    'PQC 密钥交换需 RFC 9370 多密钥交换支持。': 'PQC key exchange needs RFC 9370 multiple key-exchange support.',
+    '缺 PQC 算法标识（IKE/IPsec 模型）与 QKD 密钥交付 YANG 接口（现为 ETSI GS QKD 014 REST API，在 YANG 之外）。': 'Missing PQC algorithm identifiers (IKE/IPsec models) and a QKD key-delivery YANG interface (currently the ETSI GS QKD 014 REST API, outside YANG).',
+    /* 基础速查表 */
+    '基础模型映射速查（RFC 8299 ↔ RFC 9182 ↔ 设备模型 · §5.1–5.4 + §6 基础部分）': 'Base model mapping quick reference (RFC 8299 ↔ RFC 9182 ↔ device models · §5.1–5.4 + §6 base part)',
+    '基础 · L3SM → L3NM（§5.1–5.4）': 'Base · L3SM → L3NM (§5.1–5.4)',
+    '全链路关联键，建议端到端保持一致（唯一跨层存活的标识）。': 'End-to-end correlation key; recommended to keep it identical end to end (the only identifier surviving across layers).',
+    '良性丢弃，OSS 保留并按 vpn-id 关联。': 'Benign drop; the OSS keeps it and correlates by vpn-id.',
+    '枚举直接映射，但实现依赖 RT 构造（见下）。': 'The enumeration maps directly, but the implementation relies on RT construction (see below).',
+    '需编排器已注册 SAP，否则为派生步骤。': 'Requires the orchestrator to have registered the SAP; otherwise it is a derivation step.',
+    'vpn-node-id（并入命名方案）': 'vpn-node-id (into the naming scheme)',
+    '站点→PE 非一对一：一个 site 映射一个或多个 vpn-node。': 'site→PE is not 1:1: one site maps to one or more vpn-nodes.',
+    '客户侧事实，OSS 保留并作为 PE 选择输入。': 'Customer-side fact; kept in the OSS and used as input to PE selection.',
+    '部分（决定允许的路由选项）': 'partially (determines the allowed routing options)',
+    '指导但不出现在 L3NM 实例中。': 'Guides but does not appear in the L3NM instance.',
+    '干净的直接映射。': 'Clean direct mapping.',
+    'id（命名方案内）': 'id (within the naming scheme)',
+    '承载/AC 关联缝：需引用约定。': 'Bearer/AC correlation seam: a reference convention is needed.',
+    '客户与运营商地址。': 'Customer and provider addresses.',
+    'routing-protocols（per-access 列表）': 'routing-protocols (per-access list)',
+    'qos / qos-profiles 或 custom QoS': 'qos / qos-profiles or custom QoS',
+    '命名 profile 两侧都有则直接；custom classes 需派生每类速率与队列。': 'Direct if the named profile exists on both sides; custom classes require deriving per-class rates and queues.',
+    '（underlay 相关，无直接叶子）': '(underlay-related, no direct leaf)',
+    '下钻校验点：超出 underlay MTU 仅在设备层暴露。': 'Drill-down check point: exceeding the underlay MTU only shows up at the device layer.',
+    '∅（无 L3SM 源）': '∅ (no L3SM source)',
+    '按 vpn-node 从运营商 RD 计划分配（如 <loopback ASN>:<ordinal>）。': 'Allocated per vpn-node from the operator\u2019s RD plan (e.g. <loopback ASN>:<ordinal>).',
+    '由拓扑派生：any-to-any 单 RT；hub-spoke 构造 hub/spoke 双 RT 及 import/export 角色。': 'Derived from the topology: any-to-any gets a single RT; hub-spoke constructs hub/spoke dual RTs with import/export roles.',
+    'ne-id（PE 选择）': 'ne-id (PE selection)',
+    '由位置、承载终接、容量、多样性约束派生。': 'Derived from location, bearer termination, capacity and diversity constraints.',
+    'router-id / loopback 编址': 'router-id / loopback addressing',
+    '运营商编址计划，服务层不可见。': 'Operator addressing plan; not visible at the service layer.',
+    '如 SR Policy（color+endpoint）承载 VPN 路由；L3SM 不表达传输。': 'E.g. SR Policy (color+endpoint) carrying the VPN routes; L3SM does not express transport.',
+    '基础 · L3NM → 设备模型（§6 基础部分）': 'Base · L3NM → device models (§6 base part)',
+    'L3NM 构造': 'L3NM construct', '设备级模型': 'device-level model',
+    'ietf-vrf（RFC 8529）：VRF 实例含 RD/RT': 'ietf-vrf (RFC 8529): VRF instance with RD/RT',
+    '链路最成熟环节，RFC 8529 为此分解而设计。': 'The most mature link; RFC 8529 was designed for exactly this decomposition.',
+    'vpn-network-access / connection（接口、封装）': 'vpn-network-access / connection (interface, encapsulation)',
+    'ietf-interfaces（RFC 8343）：逻辑（子）接口，经 ietf-vrf 绑定 VRF': 'ietf-interfaces (RFC 8343): logical (sub-)interface, bound to the VRF via ietf-vrf',
+    'connection / ip-connection（运营商地址、前缀长度）': 'connection / ip-connection (provider address, prefix length)',
+    'ietf-ip（RFC 8344）：接口 IPv4/IPv6 地址': 'ietf-ip (RFC 8344): interface IPv4/IPv6 addresses',
+    'ietf-bgp（draft-ietf-idr-bgp-model）：VRF 域 BGP 邻居': 'ietf-bgp (draft-ietf-idr-bgp-model): VRF-domain BGP neighbors',
+    '模型在研，多厂商常回退厂商模型。': 'Model in progress; multi-vendor deployments often fall back to vendor models.',
+    'ietf-ospf（RFC 9129）：VRF 域 OSPF 实例': 'ietf-ospf (RFC 9129): VRF-domain OSPF instance',
+    'ietf-routing（RFC 8349）：VRF 静态路由': 'ietf-routing (RFC 8349): VRF static routes',
+    'export / import policy 引用': 'export / import policy references',
+    '（无标准设备 QoS 模型；厂商私有）': '(no standard device QoS model; vendor-proprietary)',
+    '结构性缺口：QoS 意图止于 L3NM。': 'Structural gap: QoS intent stops at L3NM.',
+    'underlay transport binding（如 SR Policy color）': 'underlay transport binding (e.g. SR Policy color)',
+    'SR Policy YANG（在研）+ BGP steering 配置': 'SR Policy YANG (in progress) + BGP steering configuration',
+    '标准化时序缺口。': 'Standardization timing gap.',
+    'Gap 索引：': 'Gap index:',
+    'G1 无标准化派生策略模型（RD/RT/PE 选择/命名） ·\n      G3 承载/AC 关联缝 ·\n      G4 无标准设备 QoS 模型 ·\n      G5 BGP 设备模型未标准化 ·\n      G6 传输绑定模型在研 ·\n      G8 无标准设备调度激活模型 ·\n      G9 抗量子加密设备链最不成熟 ·\n      G10 VPN 节点对指标聚合未标准化': 'G1 no standardized derivation-policy model (RD/RT/PE selection/naming) ·\n      G3 bearer/AC correlation seam ·\n      G4 no standard device QoS model ·\n      G5 BGP device model not standardized ·\n      G6 transport binding model in progress ·\n      G8 no standard device schedule-activation model ·\n      G9 the PQC device chain is the least mature ·\n      G10 VPN node-pair metric aggregation not standardized',
+    '本页为映射规则速查（非权威）；完整参数级表格与逐条说明见': 'this page is a mapping-rule quick reference (non-authoritative); the full parameter-level tables and per-rule notes are in',
+    '（§5.5、§6、§8、附录 A）。': '(§5.5, §6, §8, Appendix A).',
+    /* 动态文案（toast / 状态 / 引擎出处） */
+    '跟随模式已开启：变更将自动跳转 + 整批脉冲高亮': 'follow mode ON: changes auto-jump + batch pulse highlight',
+    '跟随模式已关闭：手动滚动任一面板即自动切 OFF': 'follow mode OFF: manually scrolling any panel switches it OFF',
+    '检测到手动滚动，跟随模式已自动关闭（可点击恢复）': 'manual scroll detected: follow mode auto-disabled (click to restore)',
+    '映射关系总表：已展开（点击标题可收起）': 'mapping table: expanded (click the title to collapse)',
+    '引擎连接断开，已降级为模拟引擎': 'engine connection lost; fell back to the sim engine',
+    '计算中…': 'computing…',
+    '真实引擎': 'real engine',
+    '请先选择 .yang 文件': 'please select a .yang file first',
+    '请先填写 draft 名称': 'please fill in the draft name first',
+    '上传中…': 'uploading…',
+    '提交中…': 'submitting…',
+    '✗ 上传失败': '✗ upload failed',
+    '✗ 失败': '✗ failed',
+    '映射定义已提交，下次映射自动生效': 'mapping definition submitted; effective on the next mapping run',
+    '无映射规则（N）': 'no mapping rule (N)',
+    '（无参数项）': '(no parameters)',
+    '§5.1 vpn-id → vpn-id（全链路关联键）': '§5.1 vpn-id → vpn-id (end-to-end correlation key)',
+    '§5.1 customer-name → 无对应（N，OSS 保留）': '§5.1 customer-name → no counterpart (N; kept in the OSS)',
+    '§5.2 site-id → vpn-node-id 命名方案': '§5.2 site-id → vpn-node-id naming scheme',
+    '§5.3 svc-input/output-bandwidth → qos 带宽（方向互换）': '§5.3 svc-input/output-bandwidth → qos bandwidth (direction swap)',
+    '§5.4 ∅ → route-targets（拓扑→RT 计划）': '§5.4 ∅ → route-targets (topology→RT plan)',
+    '§5.4 ∅ → ne-id（PE 选择）': '§5.4 ∅ → ne-id (PE selection)',
+    '§5.5 dynamic-l3vpn → dynamic-l3vpn（方向互换）': '§5.5 dynamic-l3vpn → dynamic-l3vpn (direction swap)',
+    '§5.5 classification-policy site → vpn-node 展开': '§5.5 classification-policy site → vpn-node expansion',
+    '§5.5 security classes → classes（class-id 一致）': '§5.5 security classes → classes (class-id identical)',
+    '§6 vpn-network-access/connection → ietf-interfaces 子接口': '§6 vpn-network-access/connection → ietf-interfaces sub-interface',
+    '§6 connection/ip-connection → ietf-ip 地址': '§6 connection/ip-connection → ietf-ip addresses',
+    '§6 routing-protocols/bgp → ietf-bgp VRF 邻居（Gap G5）': '§6 routing-protocols/bgp → ietf-bgp VRF neighbors (Gap G5)',
+    '§6 routing-protocols/static → ietf-routing 静态路由': '§6 routing-protocols/static → ietf-routing static routes',
+    '§6 qos profiles → 无标准设备模型（Gap G4）': '§6 qos profiles → no standard device model (Gap G4)',
+    '§6 schedule → 控制器调度（Gap G8）': '§6 schedule → controller scheduling (Gap G8)',
+    '§6 qos-action isolation → Slice/NRP 绑定': '§6 qos-action isolation → Slice/NRP binding',
+    '§6 security classes → IPsec/IKE 模型': '§6 security classes → IPsec/IKE models',
+    '§6 post-quantum-encryption → 无标准模型（Gap G9）': '§6 post-quantum-encryption → no standard model (Gap G9)'
+  };
+
+  /* ---- 属性字典（placeholder / title） ---- */
+  var ATTRS = ['placeholder', 'title'];
+  var ADICT = {
+    '默认 ON；手动滚动任一面板自动切 OFF': 'Default ON; manually scrolling any panel switches it OFF',
+    '新 draft 名称，如 draft-xxx-00': 'new draft name, e.g. draft-xxx-00',
+    'l3nm:.../... 或 -': 'l3nm:.../... or -',
+    '说明（可选）': 'note (optional)',
+    '删除': 'delete',
+    '切换语言 / Switch language': 'Switch language / 切换语言',
+    '每行一条映射规则：\n[R7.1-01:] l3sm:vpn-services/vpn-service/vpn-id -> l3nm:vpn-services/vpn-service/vpn-id (COPY) # 说明\nl3sm:vpn-services/vpn-service/vpn-name -> - (DROP)\nl3sm:vpn-services/vpn-service/research/sla-tier -> l3nm:vpn-services/vpn-service/research/sla-tier (COPY)\n\n支持操作: COPY / DROP / DERIVE\n路径格式: l3sm:... / l3nm:...（augment 容器需带模块前缀，如 ietf-l3vpn-svc-research-ext:research）': 'One mapping rule per line:\n[R7.1-01:] l3sm:vpn-services/vpn-service/vpn-id -> l3nm:vpn-services/vpn-service/vpn-id (COPY) # note\nl3sm:vpn-services/vpn-service/vpn-name -> - (DROP)\nl3sm:vpn-services/vpn-service/research/sla-tier -> l3nm:vpn-services/vpn-service/research/sla-tier (COPY)\n\nSupported ops: COPY / DROP / DERIVE\nPath format: l3sm:... / l3nm:... (augmented containers need the module prefix, e.g. ietf-l3vpn-svc-research-ext:research)'
+  };
+
+  /* ---- 子串替换（后端动态错误等无法整句匹配的） ---- */
+  var SUBS = [
+    ['上传文件为空', 'uploaded file is empty'],
+    ['YANG 编译失败: ', 'YANG compile failed: '],
+    ['模型库重建失败: ', 'model-library rebuild failed: '],
+    ['未知模型层级: ', 'unknown model layer: '],
+    ['（应为 business/network/device）', ' (expected: business/network/device)'],
+    ['无法从文件内容中识别 module 名称（需以 \'module <name> {\' 开头）', "cannot identify a module name from the file content (must start with 'module <name> {')"],
+    ['未解析到任何映射规则', 'no mapping rules parsed']
+  ];
+
+  /* ---- 带变量的模式 ---- */
+  var PATTERNS = [
+    { re: /^批 #(\d+)$/, en: 'Batch #$1' },
+    { re: /^反查：(.*)$/, en: 'trace-back: $1' },
+    { re: /^反查规则：(.*)$/, en: 'trace rule: $1' },
+    { re: /^(\d+) 个参数项$/, en: '$1 parameters' },
+    { re: /^draft 已激活：(.*)（模型库 (\d+) 个模块）$/, en: 'draft activated: $1 (library of $2 modules)' },
+    { re: /^✓ 已注册 (\d+) 条映射规则$/, en: '✓ $1 mapping rules registered' },
+    { re: /^⚠ (\d+) 条未解析$/, en: '⚠ $1 unparsed' },
+    { re: /^已连接真实映射引擎（WebSocket :(\d+)）$/, en: 'connected to the real mapping engine (WebSocket :$1)' },
+    { re: /^映射失败：(.*)$/, en: 'mapping failed: $1' },
+    { re: /^上传失败：(.*)$/, en: 'upload failed: $1' },
+    { re: /^上传请求失败：(.*)$/, en: 'upload request failed: $1' },
+    { re: /^✗ 请求失败：(.*)$/, en: '✗ request failed: $1' }
+  ];
+  /* ---- 翻译核心 ---- */
+  function translateStr(s) {
+    var key = s.trim();
+    if (!key || !RE_ZH.test(key)) return null;
+    if (DICT.hasOwnProperty(key)) return s.replace(key, DICT[key]);
+    var t = key, subbed = false;
+    for (var i = 0; i < SUBS.length; i++) {
+      if (t.indexOf(SUBS[i][0]) >= 0) { t = t.split(SUBS[i][0]).join(SUBS[i][1]); subbed = true; }
+    }
+    if (subbed && !RE_ZH.test(t)) return s.replace(key, t);
+    for (var j = 0; j < PATTERNS.length; j++) {
+      if (PATTERNS[j].re.test(t)) return s.replace(key, t.replace(PATTERNS[j].re, PATTERNS[j].en));
+    }
+    /* 复合句：' · ' 分隔的多段，逐段可译则整体翻译（覆盖 "R6-02 · <规则出处>" 型动态行） */
+    if (key.indexOf(' · ') > 0) {
+      var parts = key.split(' · '), outs = [], allOk = true;
+      for (var k = 0; k < parts.length; k++) {
+        var p = parts[k];
+        if (DICT.hasOwnProperty(p)) outs.push(DICT[p]);
+        else if (!RE_ZH.test(p)) outs.push(p);
+        else { allOk = false; break; }
+      }
+      if (allOk) return s.replace(key, outs.join(' · '));
+    }
+    return null;
+  }
+
+  var ORIG = new Map();   /* 文本节点 -> {o: 原文, t: 译文} */
+  var AORIG = new Map();  /* 元素 -> {attr: 原文} */
+
+  function translateTextNode(tn) {
+    var cur = tn.nodeValue;
+    var val = translateStr(cur);
+    if (val === null || val === cur) return;
+    ORIG.set(tn, { o: cur, t: val });
+    tn.nodeValue = val;
+  }
+  function restoreTextNode(tn) {
+    var r = ORIG.get(tn);
+    if (!r) return;
+    if (tn.nodeValue === r.t) tn.nodeValue = r.o; /* 仅当未被 JS 再次改写时恢复 */
+    ORIG.delete(tn);
+  }
+  function translateElAttrs(el) {
+    for (var i = 0; i < ATTRS.length; i++) {
+      var a = ATTRS[i], v = el.getAttribute(a);
+      if (!v || !RE_ZH.test(v)) continue;
+      var key = v.trim();
+      var nv = ADICT.hasOwnProperty(key) ? v.replace(key, ADICT[key]) : translateStr(v);
+      if (nv === null || nv === v) continue;
+      if (!AORIG.has(el)) AORIG.set(el, {});
+      var rec = AORIG.get(el);
+      if (rec[a] === undefined) rec[a] = v;
+      el.setAttribute(a, nv);
+    }
+  }
+  function restoreElAttrs(el) {
+    var rec = AORIG.get(el);
+    if (!rec) return;
+    Object.keys(rec).forEach(function (a) { el.setAttribute(a, rec[a]); });
+    AORIG.delete(el);
+  }
+  function textFilter(n) {
+    var p = n.parentElement;
+    return (p && (p.tagName === 'SCRIPT' || p.tagName === 'STYLE'))
+      ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+  }
+  function walkTexts(root, fn) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: textFilter }, 0);
+    var n;
+    while ((n = w.nextNode())) fn(n);
+  }
+
+  var LANG = 'zh';
+  function applyLang() {
+    var els = document.querySelectorAll('body, body *');
+    if (LANG === 'en') {
+      walkTexts(document.body, translateTextNode);
+      Array.prototype.forEach.call(els, translateElAttrs);
+    } else {
+      walkTexts(document.body, restoreTextNode);
+      Array.prototype.forEach.call(els, restoreElAttrs);
+    }
+    document.title = LANG === 'en' ? TITLE_EN : TITLE_ZH;
+    var btn = document.getElementById('langToggle');
+    if (btn) btn.textContent = LANG === 'en' ? '中文' : 'EN';
+    try { localStorage.setItem('labLang', LANG); } catch (e) { /* ignore */ }
+  }
+
+  /* ---- 动态内容自动翻译（toast / 台账 / 状态等） ---- */
+  var pending = new Set(), tId = null;
+  function flush() {
+    tId = null;
+    pending.forEach(function (n) {
+      if (!n) return;
+      var parent = n.nodeType === 3 ? n.parentNode : n;
+      if (!parent || (n.nodeType === 1 && !n.isConnected)) return;
+      if (n.nodeType === 3) translateTextNode(n);
+      else if (n.nodeType === 1) { translateElAttrs(n); walkTexts(n, translateTextNode); }
+    });
+    pending.clear();
+  }
+  function schedule(n) {
+    if (LANG !== 'en' || !n) return;
+    pending.add(n);
+    if (tId === null) tId = setTimeout(flush, 80);
+  }
+  var mo = new MutationObserver(function (muts) {
+    for (var i = 0; i < muts.length; i++) {
+      var m = muts[i];
+      if (m.type === 'childList') {
+        for (var j = 0; j < m.addedNodes.length; j++) {
+          var an = m.addedNodes[j];
+          if (an.nodeType === 1 || an.nodeType === 3) schedule(an);
+        }
+      } else if (m.type === 'characterData') {
+        schedule(m.target);
+      }
+    }
+  });
+  mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+  /* ---- 初始化与按钮绑定 ---- */
+  var langBtn = document.getElementById('langToggle');
+  if (langBtn) {
+    langBtn.addEventListener('click', function () {
+      LANG = LANG === 'en' ? 'zh' : 'en';
+      applyLang();
+    });
+  }
+  try { LANG = localStorage.getItem('labLang') || 'zh'; } catch (e) { LANG = 'zh'; }
+  if (/[?&]lang=en\b/.test(location.search)) LANG = 'en';
+  if (/[?&]lang=zh\b/.test(location.search)) LANG = 'zh';
+  applyLang();
+})();
+</script>
+</body>
+</html>

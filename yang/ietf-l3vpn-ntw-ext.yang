@@ -1,0 +1,280 @@
+module ietf-l3vpn-ntw-ext {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-l3vpn-ntw-ext";
+  prefix l3vpn-ntw-ext;
+
+  import ietf-l3vpn-ntw {
+    prefix l3vpn-ntw;
+    reference
+      "RFC 9182: A YANG Network Data Model for Layer 3 VPNs";
+  }
+  import ietf-inet-types {
+    prefix inet;
+    reference
+      "RFC 6991: Common YANG Data Types";
+  }
+  import ietf-schedule {
+    prefix schedule;
+    reference
+      "RFC 9922: A YANG Model for Scheduling";
+  }
+
+  organization
+    "IETF OPSAWG (Operations and Management Area Working Group)";
+  contact
+    "WG Web:   <https://datatracker.ietf.org/wg/opsawg/>";
+  description
+    "This module extends ietf-l3vpn-ntw with dynamic L3VPN network
+     delivery parameters (classification policies, performance
+     monitoring, security classes, QoS action rule isolation).
+     Extracted from draft-huang-onsen-l3vpn-model-mapping.";
+
+  revision 2026-10-28 {
+    description
+      "Initial revision.";
+  }
+
+  grouping classification-policy-grouping {
+    description
+      "Classification policy for dynamic L3VPN network delivery.";
+    list classification-policy {
+      key "rule-id";
+      description
+        "A classification rule.";
+      leaf rule-id {
+        type string;
+        mandatory true;
+        description
+          "Identifier of the rule.";
+      }
+      choice match-type {
+        mandatory true;
+        description
+          "Match type of the rule.";
+        case match-flow {
+          container match-flow {
+            description
+              "Match on flow fields.";
+            leaf dscp {
+              type inet:dscp;
+              description
+                "DSCP value to match.";
+            }
+            leaf dot1p {
+              type uint8 {
+                range "0..7";
+              }
+              description
+                "802.1p priority to match.";
+            }
+            leaf protocol-field {
+              type uint8;
+              description
+                "IP protocol number to match.";
+            }
+            leaf ipv4-src-prefix {
+              type inet:ipv4-prefix;
+              description
+                "IPv4 source prefix to match.";
+            }
+            leaf ipv4-dst-prefix {
+              type inet:ipv4-prefix;
+              description
+                "IPv4 destination prefix to match.";
+            }
+            leaf ipv6-src-prefix {
+              type inet:ipv6-prefix;
+              description
+                "IPv6 source prefix to match.";
+            }
+            leaf ipv6-dst-prefix {
+              type inet:ipv6-prefix;
+              description
+                "IPv6 destination prefix to match.";
+            }
+            leaf l4-src-port {
+              type inet:port-number;
+              description
+                "L4 source port to match.";
+            }
+            leaf l4-dst-port {
+              type inet:port-number;
+              description
+                "L4 destination port to match.";
+            }
+            leaf l4-src-port-range {
+              type string;
+              description
+                "L4 source port range to match (e.g., '1000-2000').";
+            }
+            leaf l4-dst-port-range {
+              type string;
+              description
+                "L4 destination port range to match (e.g., '1000-2000').";
+            }
+          }
+        }
+        case match-application {
+          leaf match-application {
+            type string;
+            description
+              "Application name to match.";
+          }
+        }
+      }
+      leaf target-class-id {
+        type string;
+        description
+          "Target QoS class identifier.";
+      }
+      leaf-list target-sites {
+        type string;
+        description
+          "Target sites of the rule.";
+      }
+    }
+  }
+
+  grouping perf-mon-grouping {
+    description
+      "Performance monitoring parameters.";
+    container perf-mon {
+      description
+        "Performance monitoring parameters.";
+      leaf enabled {
+        type boolean;
+        default true;
+        description
+          "Enable performance monitoring.";
+      }
+      leaf interval {
+        type uint32;
+        units "seconds";
+        description
+          "Monitoring interval.";
+      }
+      leaf-list metrics {
+        type string;
+        description
+          "Monitored metrics.";
+      }
+      container schedule {
+        description
+          "Monitoring schedule.";
+        uses schedule:period-of-time;
+        uses schedule:recurrence-icalendar;
+      }
+    }
+  }
+
+  augment "/l3vpn-ntw:l3vpn-ntw/l3vpn-ntw:vpn-services"
+        + "/l3vpn-ntw:vpn-service/l3vpn-ntw:vpn-nodes"
+        + "/l3vpn-ntw:vpn-node" {
+    description
+      "Augment vpn-node with temporary connection indicator,
+       classification policy and performance monitoring.";
+    leaf temporary-connection-indicator {
+      type boolean;
+      description
+        "Indicates a temporary connection.";
+    }
+    uses l3vpn-ntw-ext:classification-policy-grouping;
+    uses l3vpn-ntw-ext:perf-mon-grouping;
+  }
+
+  augment "/l3vpn-ntw:l3vpn-ntw/l3vpn-ntw:vpn-services"
+        + "/l3vpn-ntw:vpn-service/l3vpn-ntw:vpn-nodes"
+        + "/l3vpn-ntw:vpn-node/l3vpn-ntw:vpn-network-accesses"
+        + "/l3vpn-ntw:vpn-network-access" {
+    description
+      "Augment vpn-network-access with dynamic L3VPN parameters,
+       classification policy and performance monitoring.";
+    container dynamic-l3vpn {
+      description
+        "Dynamic L3VPN parameters.";
+      leaf dynamic-l3vpn-id {
+        type string;
+        description
+          "Identifier of the dynamic L3VPN.";
+      }
+      leaf adjustment-mode {
+        type enumeration {
+          enum manual {
+            description
+              "Manual adjustment.";
+          }
+          enum automatic {
+            description
+              "Automatic adjustment.";
+          }
+        }
+        description
+          "Adjustment mode of the dynamic L3VPN.";
+      }
+      container schedule {
+        description
+          "Adjustment schedule.";
+        uses schedule:period-of-time;
+        uses schedule:recurrence-icalendar;
+      }
+    }
+    uses l3vpn-ntw-ext:classification-policy-grouping;
+    uses l3vpn-ntw-ext:perf-mon-grouping;
+  }
+
+  augment "/l3vpn-ntw:l3vpn-ntw/l3vpn-ntw:vpn-services"
+        + "/l3vpn-ntw:vpn-service/l3vpn-ntw:vpn-nodes"
+        + "/l3vpn-ntw:vpn-node/l3vpn-ntw:vpn-network-accesses"
+        + "/l3vpn-ntw:vpn-network-access/l3vpn-ntw:service" {
+    description
+      "Augment service with security classes and QoS action rule
+       isolation.";
+    container security {
+      description
+        "Security parameters.";
+      container security-classes {
+        description
+          "Security classes.";
+        list security-class {
+          key "class-id";
+          description
+            "A security class.";
+          leaf class-id {
+            type string;
+            mandatory true;
+            description
+              "Identifier of the security class.";
+          }
+          leaf encryption-profile-id {
+            type string;
+            description
+              "Reference to an encryption profile.";
+          }
+          leaf-list allowed-ipv4-prefixes {
+            type inet:ipv4-prefix;
+            description
+              "Allowed IPv4 prefixes.";
+          }
+          leaf-list allowed-ipv6-prefixes {
+            type inet:ipv6-prefix;
+            description
+              "Allowed IPv6 prefixes.";
+          }
+        }
+      }
+    }
+    container qos {
+      description
+        "QoS parameters.";
+      container qos-action {
+        description
+          "QoS action parameters.";
+        leaf rule-isolation {
+          type boolean;
+          description
+            "Isolate traffic matching this rule.";
+        }
+      }
+    }
+  }
+}
