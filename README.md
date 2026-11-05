@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: 'ccbbe7ff-bc70-4443-b8c1-05dae78c3307'
-  PropagateID: 'ccbbe7ff-bc70-4443-b8c1-05dae78c3307'
-  ReservedCode1: '40795f6d-65cb-43a1-a2db-72f58173377d'
-  ReservedCode2: '40795f6d-65cb-43a1-a2db-72f58173377d'
+  ProduceID: '6f14443c-753d-49ab-a975-ff24842bc339'
+  PropagateID: '6f14443c-753d-49ab-a975-ff24842bc339'
+  ReservedCode1: '4028cdb1-d0e9-43a0-96a2-ea07e2fa4bd2'
+  ReservedCode2: '4028cdb1-d0e9-43a0-96a2-ea07e2fa4bd2'
 ---
 
 # L3VPN 无损映射应用（C1 版 · 研究人员扩展 · Windows 绿色版）
@@ -149,5 +149,12 @@ python-multipart（draft 上传）、wsproto（WebSocket 实时 trace）
 ```bash
 python3 -m engine.cli   # 3 个 TC 全 PASS，输出 .tmp/mapping-report.json
 ```
+
+## 作者 / Author
+
+**Cancan Huang** (China Telecom) — <huangcanc@chinatelecom.cn>
+
+本工具面向 IETF ONSEN 工作组的 L3VPN 模型映射演示与验证场景开源，
+欢迎交流与反馈（Welcome feedback and collaboration）。
 
 > AI生成
