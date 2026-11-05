@@ -3,158 +3,162 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '6f14443c-753d-49ab-a975-ff24842bc339'
-  PropagateID: '6f14443c-753d-49ab-a975-ff24842bc339'
-  ReservedCode1: '4028cdb1-d0e9-43a0-96a2-ea07e2fa4bd2'
-  ReservedCode2: '4028cdb1-d0e9-43a0-96a2-ea07e2fa4bd2'
+  ProduceID: '4846aa9c-8fe7-4bbd-9735-9b5a1a7eedfc'
+  PropagateID: '4846aa9c-8fe7-4bbd-9735-9b5a1a7eedfc'
+  ReservedCode1: '8be4e946-2ee9-4c99-875f-448aee77ee7a'
+  ReservedCode2: '8be4e946-2ee9-4c99-875f-448aee77ee7a'
 ---
 
-# L3VPN 无损映射应用（C1 版 · 研究人员扩展 · Windows 绿色版）
+# L3VPN YANG Models Mapping and Validation
 
-> **版本说明**：C1 基于 C0 复制演进，新增**研究人员扩展功能**——模型 draft 上传、
-> 模型特征解析展示、跨层级映射关系自定义。C0 原始代码保留在 workspace `C0/` 目录。
+> An interactive lab that performs **lossless model mapping** across three layers:
+> **L3SM (service model, RFC 8299) → L3NM (network model, RFC 9182) → device models (OpenConfig)**,
+> with YANG validation and end-to-end mapping consistency verification.
 
-前后端一体打包：**后端**（FastAPI + 规则引擎 + YANG 校验）+ **前端**（映射可视化页面）。
-本绿色版**已内置 Windows Python 3.11 运行时与全部依赖**，目标电脑**无需安装 Python、
-无需安装任何依赖、无需联网**，解压后双击即可运行，像普通 Windows 应用一样使用。
+Single-package deployment: **backend** (FastAPI + mapping rule engine + YANG validation)
+and **frontend** (mapping visualization page) in one folder. The Windows portable build
+bundles a Python 3.11 runtime with all dependencies, so the target machine needs
+**no Python installation, no dependency setup, and no network access** — just unzip
+and double-click, like any ordinary Windows application.
 
-## 目录结构
+## Repository Layout
 
 ```
 l3vpn-mapping-app/
-├── start.bat           # 一键启动（Windows，双击即可）
-├── start.sh            # 一键启动（Linux / macOS，需自备 Python）
-├── app.py              # 后端入口（FastAPI：API + WebSocket + 前端托管）
-├── draft_manager.py    # 【C1 新增】draft 上传 / 特征解析 / 映射定义 / 动态规则执行
-├── engine/             # 映射规则引擎（45 条规则 + trace + 无损指标）
-├── yang/               # YANG 资产（7 模块 + yang-library.json + drafts/ 上传目录）
-├── mappings/           # 【C1 新增】研究人员定义的映射规则（dynamic-rules.json）
+├── start.bat           # one-click launcher (Windows, just double-click)
+├── start.sh            # one-click launcher (Linux / macOS, needs Python installed)
+├── app.py              # backend entry (FastAPI: API + WebSocket + frontend hosting)
+├── draft_manager.py    # draft upload / feature parsing / mapping definitions / dynamic rules
+├── engine/             # mapping rule engine (45 built-in rules + trace + lossless metrics)
+├── yang/               # YANG assets (7 modules + yang-library.json + drafts/ upload dir)
+├── mappings/           # researcher-defined mapping rules (dynamic-rules.json)
 ├── web/
-│   └── lab-page1.html  # 前端页面（端口自适应 + 研究人员扩展 UI）
-└── runtime/            # 【内置】Windows Python 3.11 运行时 + 全部依赖（勿删）
+│   └── lab-page1.html  # frontend page (port-adaptive + researcher extension UI)
+└── runtime/            # bundled Windows Python 3.11 runtime + all dependencies (do not delete)
 ```
 
-## 快速开始（Windows）
+## Quick Start (Windows)
 
-1. 将整个文件夹拷贝/解压到任意位置（路径可含中文、空格）；
-2. 双击 `start.bat`；
-3. 窗口显示 `地址: http://127.0.0.1:8000` 后约 3 秒，浏览器会自动打开该地址。
+1. Copy / unzip the whole folder to any location (Chinese characters and spaces in the path are fine);
+2. Double-click `start.bat`;
+3. About 3 seconds after the window shows `URL: http://127.0.0.1:8000`, the browser opens automatically.
 
-> 无需安装 Python、无需联网、无需任何配置。关闭启动窗口即停止服务。
-> 页面右上角提供 **中文 / EN** 语言切换，便于对外演示。
+> No Python installation, no network access, no configuration required.
+> Closing the launcher window stops the service.
+> A **中文 / EN** language toggle is available at the top right of the page for demos.
 
-### Linux / macOS（需自备 Python 3.10+）
+### Linux / macOS (requires Python 3.10+)
 ```bash
-bash start.sh        # 首次运行自动安装依赖（需联网）
+bash start.sh        # installs dependencies automatically on first run (needs network)
 ```
 
-### 手动启动（任意平台）
+### Manual start (any platform)
 ```bash
 python3 -m uvicorn app:app --host 127.0.0.1 --port 8000
-# 浏览器打开 http://127.0.0.1:8000
+# then open http://127.0.0.1:8000 in a browser
 ```
 
-## 使用说明
+## Using the Lab
 
-1. 打开页面后，前端自动连接 WebSocket 并触发一次**真实引擎**映射演示；
-2. 左侧台账展示 L3SM 输入（可编辑），点击 **「开始映射」** 重新执行；
-3. 映射过程实时推送 trace：源字段高亮 → 规则命中脉冲 → 目标字段写入；
-4. 底部指标条实时更新：**覆盖率 / 往返 diff / 溯源完整率**；
-5. 后端不可用时（如仅拷贝前端），页面自动降级为内置模拟引擎。
+1. On page load, the frontend connects via WebSocket and triggers a **real-engine** mapping demo automatically;
+2. The left column shows the L3SM input (editable); click **「开始映射」(Start Mapping)** to re-run;
+3. Mapping pushes trace events in real time: source-field highlight → rule-hit pulse → target-field write;
+4. The metrics bar updates live: **coverage / round-trip diff / traceability**;
+5. If the backend is unavailable (e.g. the frontend is copied alone), the page automatically falls back to its built-in simulation engine.
 
-## 【C1 新增】研究人员扩展功能
+## Researcher Extensions (C1)
 
-### 1. 模型 draft 上传（左栏）
+### 1. Draft upload (left column)
 
-三个模型层级（业务 L3SM / 网络 L3NM / 设备 OpenConfig）各有一个 draft 区：
+Each model layer (service L3SM / network L3NM / device OpenConfig) has its own draft box:
 
-- 输入 **draft 名称**（如 `draft-research-ext-00`）；
-- 点击 **「上传 YANG draft」** 选择 `.yang` 文件上传；
-- 后端自动完成：pyang 编译校验 → 保存到 `yang/drafts/<layer>/` →
-  重建 `yang-library.json` → 重载 yangson DataModel；
-- 上传成功后左栏显示当前激活的模块名。
+- enter a **draft name** (e.g. `draft-research-ext-00`);
+- click **「上传 YANG draft」(Upload YANG draft)** and pick a `.yang` file;
+- the backend then compiles it with pyang → saves it to `yang/drafts/<layer>/` →
+  rebuilds `yang-library.json` → reloads the yangson DataModel;
+- the left column shows the currently active module name after a successful upload.
 
-### 2. 模型特征解析展示（中栏）
+### 2. Model feature tree (middle column)
 
-每个模型段顶部有 **「模型特征（YANG 解析）」** 折叠面板：
+Each model section has a collapsible **「模型特征（YANG 解析）」(Model Features, YANG-parsed)** panel:
 
-- 展示当前 draft 解析出的参数项树（容器 / 列表 / 叶子 / 类型 / 描述）；
-- 上传新 draft 后自动刷新，新增参数项即时可见；
-- augment 节点以 `⊕` 标记并显示挂载路径。
+- shows the parameter tree parsed from the current draft (containers / lists / leaves / types / descriptions);
+- refreshes automatically after a new draft is uploaded — new parameters appear immediately;
+- augment nodes are marked with `⊕` together with their mount path.
 
-### 3. 映射关系定义（右栏）
+### 3. Mapping-rule definition (right column)
 
-**「映射关系定义（研究人员）」** 面板支持两种输入方式：
+The **「映射关系定义（研究人员）」(Mapping Definition, researcher)** panel accepts two input styles:
 
-- **draft 文本**：每行一条规则，格式：
+- **draft text**: one rule per line, e.g.
   ```
-  [R7.1-01:] l3sm:vpn-services/vpn-service/vpn-id -> l3nm:vpn-services/vpn-service/vpn-id (COPY) # 说明
+  [R7.1-01:] l3sm:vpn-services/vpn-service/vpn-id -> l3nm:vpn-services/vpn-service/vpn-id (COPY) # note
   l3sm:vpn-services/vpn-service/vpn-name -> - (DROP)
   ```
-  支持操作：`COPY` / `DROP` / `DERIVE`；`#` 后为注释。
-- **表格**：动态添加行（ID / 源字段 / 目标字段 / 操作 / 说明）。
+  Supported operations: `COPY` / `DROP` / `DERIVE`; text after `#` is a comment.
+- **table**: add rows dynamically (ID / source field / target field / operation / note).
 
-提交后规则持久化到 `mappings/dynamic-rules.json`，**下次映射自动生效**，
-trace 中以 `#R` 批次标记动态规则，可溯源。
+Submitted rules are persisted to `mappings/dynamic-rules.json` and **take effect on the next
+mapping run automatically**; dynamic rules are tagged with a `#R` batch in the trace and remain traceable.
 
-> 路径格式：`l3sm:...` / `l3nm:...`；列表段可用 `xxx[key=value]` 定位；
-> augment 引入的容器需带模块前缀（如 `ietf-l3vpn-svc-research-ext:research`）。
+> Path format: `l3sm:...` / `l3nm:...`; list entries can be addressed with `xxx[key=value]`;
+> containers introduced via augment need the module prefix (e.g. `ietf-l3vpn-svc-research-ext:research`).
 
-## 端口与配置
+## Ports and Configuration
 
-| 环境变量 | 默认值   | 说明               |
-|----------|----------|--------------------|
-| `PORT`   | `8000`   | 服务端口           |
-| `HOST`   | `127.0.0.1` | 监听地址（start.sh） |
+| Env var  | Default    | Description                       |
+|----------|------------|-----------------------------------|
+| `PORT`   | `8000`     | service port                      |
+| `HOST`   | `127.0.0.1` | listen address (start.sh)        |
 
-前端端口自适应：从页面 URL 自动取端口，改端口无需改前端。
+The frontend is port-adaptive: it reads the port from the page URL, so changing the port never requires frontend changes.
 
 ## API
 
-| 方法 | 路径      | 说明                                             |
-|------|-----------|--------------------------------------------------|
-| GET  | `/`       | 前端页面                                          |
-| GET  | `/health` | 健康检查（含动态规则数）                           |
-| POST | `/api/map`| 接收 L3SM（RFC 7951）→ L3NM + 设备 + trace + 指标 |
-| WS   | `/ws/trace` | 映射过程实时推送 trace 事件                     |
-| GET  | `/api/models` | 【C1】三模型层级特征树 + 当前 draft            |
-| POST | `/api/draft/upload` | 【C1】上传 YANG draft（multipart）      |
-| GET  | `/api/drafts` | 【C1】已上传 draft 列表                        |
-| POST | `/api/mapping/define` | 【C1】定义映射关系（文本/表格）        |
-| GET  | `/api/mappings` | 【C1】已定义映射规则列表                      |
+| Method | Path | Description                                       |
+|--------|------|---------------------------------------------------|
+| GET  | `/`       | frontend page                              |
+| GET  | `/health` | health check (includes dynamic rule count) |
+| POST | `/api/map`| L3SM input (RFC 7951) → L3NM + device models + trace + metrics |
+| WS   | `/ws/trace` | real-time trace events during mapping     |
+| GET  | `/api/models` | feature trees of the three model layers + current drafts |
+| POST | `/api/draft/upload` | upload a YANG draft (multipart)     |
+| GET  | `/api/drafts` | list of uploaded drafts                     |
+| POST | `/api/mapping/define` | define mapping rules (text / table) |
+| GET  | `/api/mappings` | list of defined mapping rules             |
 
-## 无损指标（TC-MAP-001~003）
+## Lossless Metrics (TC-MAP-001~003)
 
-| 指标       | 目标   | 实测   |
-|------------|--------|--------|
-| 覆盖率     | 100%   | 100%   |
-| 往返 diff  | =0     | =0     |
-| 溯源完整率 | 100%   | 100%   |
-| L3NM 校验  | valid  | valid  |
+| Metric        | Target | Measured |
+|---------------|--------|----------|
+| Coverage      | 100%   | 100%     |
+| Round-trip diff | =0   | =0       |
+| Traceability  | 100%   | 100%     |
+| L3NM validation | valid | valid   |
 
-## 依赖
+## Dependencies
 
-- **Windows 绿色版**：零依赖（内置 runtime/，Python 3.11 + 全部依赖已打包）
-- **从源码运行（任意平台）**：Python ≥ 3.10，然后：
+- **Windows portable build**: zero setup (bundled `runtime/`, Python 3.11 + all dependencies included)
+- **Running from source (any platform)**: Python ≥ 3.10, then:
 
 ```bash
 python3 -m pip install --user -r requirements.txt
 ```
 
-依赖清单：fastapi / uvicorn（服务）、yangson（实例校验）、pyang（YANG 编译）、
-python-multipart（draft 上传）、wsproto（WebSocket 实时 trace）
+Dependency list: fastapi / uvicorn (service), yangson (instance validation), pyang (YANG compilation),
+python-multipart (draft upload), wsproto (WebSocket real-time trace).
 
-## 引擎自测（可选）
+## Engine Self-Test (optional)
 
 ```bash
-python3 -m engine.cli   # 3 个 TC 全 PASS，输出 .tmp/mapping-report.json
+python3 -m engine.cli   # 3 TCs all PASS, writes .tmp/mapping-report.json
 ```
 
-## 作者 / Author
+## Author
 
 **Cancan Huang** (China Telecom) — <huangcanc@chinatelecom.cn>
 
-本工具面向 IETF ONSEN 工作组的 L3VPN 模型映射演示与验证场景开源，
-欢迎交流与反馈（Welcome feedback and collaboration）。
+Open-sourced for L3VPN model-mapping demonstration and validation in the IETF ONSEN
+context. Feedback and collaboration are welcome.
 
 > AI生成

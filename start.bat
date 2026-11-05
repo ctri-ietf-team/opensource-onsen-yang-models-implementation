@@ -1,6 +1,7 @@
 @echo off
 rem ============================================================
-rem  L3VPN Mapping App - one-click launcher (portable green build)
+rem  L3VPN YANG Models Mapping and Validation
+rem  One-click launcher (portable green build, Windows)
 rem  Bundled Python runtime - no installation needed.
 rem  Optional env var: PORT (default 8000)
 rem  NOTE: keep this file pure ASCII (no Chinese) or cmd.exe
@@ -11,7 +12,7 @@ set PORT=8000
 if not "%PORT_ENV%"=="" set PORT=%PORT_ENV%
 
 echo ==============================================
-echo   L3VPN Mapping App
+echo   L3VPN YANG Models Mapping and Validation
 echo   URL: http://127.0.0.1:%PORT%
 echo   Close this window to stop the service.
 echo ==============================================
