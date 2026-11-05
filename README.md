@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '87352d38-8c36-4a40-a56d-2ef552e1caee'
-  PropagateID: '87352d38-8c36-4a40-a56d-2ef552e1caee'
-  ReservedCode1: '4384edd3-f9d9-47d0-9954-b6db079e76d8'
-  ReservedCode2: '4384edd3-f9d9-47d0-9954-b6db079e76d8'
+  ProduceID: '68132c07-a1de-4652-a02d-d73fcbf9e3fc'
+  PropagateID: '68132c07-a1de-4652-a02d-d73fcbf9e3fc'
+  ReservedCode1: '186a135d-4fca-4a97-abd1-8a6c3991fab9'
+  ReservedCode2: '186a135d-4fca-4a97-abd1-8a6c3991fab9'
 ---
 
 # LXVPN YANG Models Mapping and Validation
@@ -20,11 +20,11 @@ This project targets the **mapping and validation between the YANG models publis
 existing RFCs and the YANG models extended with new features in the future** within the scope
 of the ONSEN work. Two premises frame everything below.
 
-### Premise 1 — LXVPN is the umbrella; L3VPN is the first step
+### Premise 1 — LXVPN is the ultimate goal; L3VPN is the first step
 
-The framework is named **LXVPN** because it is meant to cover multiple VPN services in the
-ONSEN context, not L3VPN alone. The current release implements **L3VPN as the first step**.
-More services will follow, e.g. **L2VPN** and **ACaaS**.
+**LXVPN is the ultimate goal** — the mapping and validation work is meant to cover multiple
+VPN services in the ONSEN context, not L3VPN alone. The current release implements **L3VPN
+as the first step**. More services will follow, e.g. **L2VPN** and **ACaaS**.
 
 ### Premise 2 — this web page is only the visualization part of the whole experiment
 
@@ -101,12 +101,12 @@ If you are a researcher and have **new extensions for a given YANG model**, the 
 to do is **write an Internet-Draft that describes the extension**, and then upload it to the
 corresponding draft box in the **left column**.
 
-- **Service (business) model.** Write a draft describing your extension of the service model,
+- **Business model.** Write a draft describing your extension of the service model,
   named like `draft-<authurname>-onsen-XX-ext-service-yang-model` (`<authurname>` = the author
-  name), and upload it to the orchestration dialog box of the business layer in the left
-  column. The service model currently in use is the **L3SM RFC (RFC 8299)**.
+  name), and upload it to the orchestration dialog box in the left column. The service model
+  currently in use is the **L3SM RFC (RFC 8299)**.
 - **Network model.** Then write a draft describing how the corresponding network model is
-  extended with respect to the previous RFC, named like
+  extended with respect to the previous draft, named like
   `draft-<authurname>-onsen-XX-ext-network-yang-model`, and upload it to the orchestration
   dialog box of the network layer in the left column. The network model currently in use is
   the **L3NM RFC (RFC 9182)**.
@@ -164,7 +164,7 @@ mapping run automatically**; dynamic rules are tagged with a `#R` batch in the t
 
 **Gap indication.** If the mapping relationships are wrong, missing or incomplete, the web
 page **displays the missing parts** — which provides concrete evidence for identifying gaps
-in the IETF (查漏补缺).
+in the IETF.
 
 **From mapping to real devices.** If all three layers of the mapping pass validation, the
 resulting **device-model configuration is downloaded to real devices in the China Telecom
@@ -228,5 +228,3 @@ python3 -m engine.cli   # 3 TCs all PASS, writes .tmp/mapping-report.json
 
 Open-sourced for LXVPN model-mapping demonstration and validation in the IETF ONSEN
 context. Feedback and collaboration are welcome.
-
-> AI生成
