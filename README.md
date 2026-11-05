@@ -3,17 +3,41 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '4846aa9c-8fe7-4bbd-9735-9b5a1a7eedfc'
-  PropagateID: '4846aa9c-8fe7-4bbd-9735-9b5a1a7eedfc'
-  ReservedCode1: '8be4e946-2ee9-4c99-875f-448aee77ee7a'
-  ReservedCode2: '8be4e946-2ee9-4c99-875f-448aee77ee7a'
+  ProduceID: '87352d38-8c36-4a40-a56d-2ef552e1caee'
+  PropagateID: '87352d38-8c36-4a40-a56d-2ef552e1caee'
+  ReservedCode1: '4384edd3-f9d9-47d0-9954-b6db079e76d8'
+  ReservedCode2: '4384edd3-f9d9-47d0-9954-b6db079e76d8'
 ---
 
-# L3VPN YANG Models Mapping and Validation
+# LXVPN YANG Models Mapping and Validation
 
-> An interactive lab that performs **lossless model mapping** across three layers:
-> **L3SM (service model, RFC 8299) → L3NM (network model, RFC 9182) → device models (OpenConfig)**,
-> with YANG validation and end-to-end mapping consistency verification.
+> **Interactive LXVPN lossless model mapping and validation: LXSM → LXNM → device models,
+> with YANG validation and end-to-end mapping consistency verification.**
+
+## Scope and Premises
+
+This project targets the **mapping and validation between the YANG models published in the
+existing RFCs and the YANG models extended with new features in the future** within the scope
+of the ONSEN work. Two premises frame everything below.
+
+### Premise 1 — LXVPN is the umbrella; L3VPN is the first step
+
+The framework is named **LXVPN** because it is meant to cover multiple VPN services in the
+ONSEN context, not L3VPN alone. The current release implements **L3VPN as the first step**.
+More services will follow, e.g. **L2VPN** and **ACaaS**.
+
+### Premise 2 — this web page is only the visualization part of the whole experiment
+
+The GitHub web page covers the model-mapping part: visualizing how the service model, the
+network model and the device model are mapped to each other (L3SM → L3NM → device models),
+together with YANG validation and mapping-consistency verification.
+
+The complete experiment goes one step further: once the device-model configuration is
+produced, it is **downloaded to real devices in the CTRI (China Telecom Research Institute)
+lab and verified end-to-end, to check whether the service actually runs**. That step is
+**not yet presented in the web page** — the page shows the mapping/validation stage only.
+
+---
 
 Single-package deployment: **backend** (FastAPI + mapping rule engine + YANG validation)
 and **frontend** (mapping visualization page) in one folder. The Windows portable build
@@ -66,43 +90,87 @@ python3 -m uvicorn app:app --host 127.0.0.1 --port 8000
 4. The metrics bar updates live: **coverage / round-trip diff / traceability**;
 5. If the backend is unavailable (e.g. the frontend is copied alone), the page automatically falls back to its built-in simulation engine.
 
-## Researcher Extensions (C1)
+## Researcher Extensions
 
-### 1. Draft upload (left column)
+The page is organized as **three columns: left = model inputs, middle = mapping visualization,
+right = mapping-rule definition**. The sections below follow that layout.
 
-Each model layer (service L3SM / network L3NM / device OpenConfig) has its own draft box:
+### 1. Left column — extend a YANG model and upload your draft
 
-- enter a **draft name** (e.g. `draft-research-ext-00`);
-- click **「上传 YANG draft」(Upload YANG draft)** and pick a `.yang` file;
-- the backend then compiles it with pyang → saves it to `yang/drafts/<layer>/` →
-  rebuilds `yang-library.json` → reloads the yangson DataModel;
-- the left column shows the currently active module name after a successful upload.
+If you are a researcher and have **new extensions for a given YANG model**, the first thing
+to do is **write an Internet-Draft that describes the extension**, and then upload it to the
+corresponding draft box in the **left column**.
 
-### 2. Model feature tree (middle column)
+- **Service (business) model.** Write a draft describing your extension of the service model,
+  named like `draft-<authurname>-onsen-XX-ext-service-yang-model` (`<authurname>` = the author
+  name), and upload it to the orchestration dialog box of the business layer in the left
+  column. The service model currently in use is the **L3SM RFC (RFC 8299)**.
+- **Network model.** Then write a draft describing how the corresponding network model is
+  extended with respect to the previous RFC, named like
+  `draft-<authurname>-onsen-XX-ext-network-yang-model`, and upload it to the orchestration
+  dialog box of the network layer in the left column. The network model currently in use is
+  the **L3NM RFC (RFC 9182)**.
+- **Device model.** The device layer (OpenConfig) has the same draft box, in case the
+  extension needs a device-side counterpart.
 
-Each model section has a collapsible **「模型特征（YANG 解析）」(Model Features, YANG-parsed)** panel:
+Upload flow (handled automatically by the backend):
 
-- shows the parameter tree parsed from the current draft (containers / lists / leaves / types / descriptions);
-- refreshes automatically after a new draft is uploaded — new parameters appear immediately;
-- augment nodes are marked with `⊕` together with their mount path.
+1. enter the **draft name** in the box;
+2. click **「上传 YANG draft」(Upload YANG draft)** and pick the `.yang` file;
+3. the backend compiles it with pyang → saves it to `yang/drafts/<layer>/` →
+   rebuilds `yang-library.json` → reloads the yangson DataModel;
+4. the left column then shows the currently active module name, and the parsed feature tree
+   appears in the middle column.
 
-### 3. Mapping-rule definition (right column)
+### 2. Middle column — visualization of the cross-layer mapping
 
-The **「映射关系定义（研究人员）」(Mapping Definition, researcher)** panel accepts two input styles:
+The middle column **visualizes the mapping relationships among the service model, the
+network model and the device model** — the three-layer link for the same service instance,
+with field-level highlights and causal numbering.
 
-- **draft text**: one rule per line, e.g.
+**The mapping shown here is driven by the mapping rules defined in the right column.** In
+other words: right column = the rules (the "why"), middle column = the visualized mapping
+(the "what"). Each model section also has a collapsible **「模型特征（YANG 解析）」(Model
+Features, YANG-parsed)** panel showing the parameter tree parsed from the currently active
+draft (containers / lists / leaves / types / descriptions, with `⊕` marking augment nodes
+and their mount paths).
+
+### 3. Right column — mapping-rule definition
+
+This column is where **researchers define the parameter-level mapping relationships between
+the YANG models of the different layers**.
+
+The mapping relationships of all layers for **L3VPN have already been parsed** and can be
+browsed as a list. When a researcher adds new features to the model RFCs at any layer, the
+mapping rules can be supplied in two ways:
+
+- **Enter the rules manually**, in the supported format — one rule per line:
   ```
   [R7.1-01:] l3sm:vpn-services/vpn-service/vpn-id -> l3nm:vpn-services/vpn-service/vpn-id (COPY) # note
   l3sm:vpn-services/vpn-service/vpn-name -> - (DROP)
   ```
-  Supported operations: `COPY` / `DROP` / `DERIVE`; text after `#` is a comment.
-- **table**: add rows dynamically (ID / source field / target field / operation / note).
+  Supported operations: `COPY` / `DROP` / `DERIVE`; text after `#` is a comment. A table
+  editor is also available (ID / source field / target field / operation / note).
+- **Upload the deployment guidance of a service** — the backend parses the mapping rules of
+  each layer out of it automatically.
 
 Submitted rules are persisted to `mappings/dynamic-rules.json` and **take effect on the next
 mapping run automatically**; dynamic rules are tagged with a `#R` batch in the trace and remain traceable.
 
 > Path format: `l3sm:...` / `l3nm:...`; list entries can be addressed with `xxx[key=value]`;
 > containers introduced via augment need the module prefix (e.g. `ietf-l3vpn-svc-research-ext:research`).
+
+### 4. Mapping checks — and what happens when everything passes
+
+**Gap indication.** If the mapping relationships are wrong, missing or incomplete, the web
+page **displays the missing parts** — which provides concrete evidence for identifying gaps
+in the IETF (查漏补缺).
+
+**From mapping to real devices.** If all three layers of the mapping pass validation, the
+resulting **device-model configuration is downloaded to real devices in the China Telecom
+(CTRI) lab**, and the service is verified end-to-end to check whether it actually runs.
+As stated in Premise 2, this real-device verification step is currently **outside the web
+page** and will be presented later.
 
 ## Ports and Configuration
 
@@ -158,7 +226,7 @@ python3 -m engine.cli   # 3 TCs all PASS, writes .tmp/mapping-report.json
 
 **Cancan Huang** (China Telecom) — <huangcanc@chinatelecom.cn>
 
-Open-sourced for L3VPN model-mapping demonstration and validation in the IETF ONSEN
+Open-sourced for LXVPN model-mapping demonstration and validation in the IETF ONSEN
 context. Feedback and collaboration are welcome.
 
 > AI生成
